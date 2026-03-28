@@ -19,3 +19,52 @@ import { ProfilesModule } from './profiles/profiles.module';
 
 export class AppModule {}
 ```
+
+## Controllers
+Controllers are responsible for handling incoming requests and returning responses to the client. In NestJS, controllers are defined using the `@Controller()` decorator. The `@Controller()` decorator takes an optional string argument that specifies the route path for the controller. If no path is provided, the controller will be registered at the root path.
+Ex: 
+```ts
+@Controller('profiles')
+```
+1. Get all profiles: `GET /profiles`
+```ts
+ @Get()
+  findAll() {
+    return [];
+  }
+```
+2. Get a query parameter: `GET /profiles?name=John`
+```ts
+ @Get()
+  findAll(@Query('name') name: string) {
+    return `This action returns all profiles with the name ${name}`;
+  }
+```
+3. Get a route parameter: `GET /profiles/:id`
+```ts
+ @Get(':id')
+  findOne(@Param('id') id: string) {
+    return `This action returns a profile with the ID ${id}`;
+  }
+```
+4. Create a new profile: `POST /profiles`
+```ts
+ @Post()
+  create(@Body() createProfileDto: CreateProfileDto) {
+    return 'This action adds a new profile';
+  }
+```
+5. Update a profile: `PUT /profiles/:id`
+```ts
+ @Put(':id')
+  update(@Param('id') id: string, @Body() updateProfileDto: UpdateProfileDto) {
+    return `This action updates a profile with the ID ${id}`;
+  }
+```
+6. Delete a profile: `DELETE /profiles/:id`
+```ts
+ @Delete(':id')
+  remove(@Param('id') id: string) {
+    return `This action removes a profile with the ID ${id}`;
+  }
+```
