@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProfileDTO } from './dto/createPost.dto';
 import { UpdateProfile } from './dto/updatePost.dto';
 
@@ -43,6 +43,11 @@ export class ProfilesService {
     const profile = this.profiles.find(
       (profile) => profile.id === parseInt(id),
     );
+
+    if (!profile) {
+      throw new NotFoundException(`Profile with id ${id} not found`);
+    }
+
     if (profile) {
       profile.name = data.name || profile.name;
       return profile;
@@ -51,6 +56,10 @@ export class ProfilesService {
 
   // Delete a profile by id
   delete(id: string) {
+    if (!this.profiles.find((profile) => profile.id === parseInt(id))) {
+      throw new NotFoundException(`Profile with id ${id} not found`);
+    }
+
     this.profiles = this.profiles.filter(
       (profile) => profile.id !== parseInt(id),
     );

@@ -133,3 +133,18 @@ export class ProfilesService {
   }
 }
 ```
+## Exceptions
+In NestJS, you can throw exceptions to indicate that an error has occurred. NestJS provides a set of built-in exceptions that you can use to handle common error scenarios. For example, if you want to indicate that a resource was not found, you can throw a `NotFoundException`. This will automatically set the HTTP status code to 404 and return a response with the appropriate error message. You can also create custom exceptions by extending the built-in exceptions or by creating your own exception classes. When you throw an exception in a controller or service, NestJS will catch the exception and return an appropriate response to the client based on the type of exception thrown. Ex:
+```ts
+ if (!profile) {
+      throw new NotFoundException(`Profile with id ${id} not found`);
+    }
+```
+In this example, if the profile with the specified id is not found, a `NotFoundException` is thrown with a message indicating that the profile was not found. This will result in a response with a 404 status code and the error message in the response body. Some common built-in exceptions in NestJS include:
+- `BadRequestException`: Indicates that the request was invalid or cannot be processed.
+- `UnauthorizedException`: Indicates that the client is not authenticated or does not have the necessary permissions to access the resource.
+- `ForbiddenException`: Indicates that the client is authenticated but does not have the necessary permissions to access the resource.
+- `NotFoundException`: Indicates that the requested resource was not found.
+- `InternalServerErrorException`: Indicates that an unexpected error occurred on the server.
+You can also create custom exceptions by extending the built-in exceptions or by creating your own exception classes. For example, you could create a custom exception for a specific error scenario in your application, such as a `ProfileAlreadyExistsException` that is thrown when trying to create a profile that already exists. This allows you to provide more specific error messages and handle different error scenarios in a more granular way.
+

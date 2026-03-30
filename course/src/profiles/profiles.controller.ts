@@ -4,7 +4,9 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
+  // NotFoundException,
   Param,
   Patch,
   Post,
@@ -34,6 +36,16 @@ export class ProfilesController {
   // Get /profiles/:id - get a one profile using id
   @Get(':id')
   findOne(@Param('id') id: string) {
+    // Exception handling example
+    const profile = this.profileService.findOne(id);
+    if (!profile) {
+      // If the profile with the specified id is not found, throw an HttpException with a 404 status code
+      throw new HttpException('Profile Not Found', HttpStatus.NOT_FOUND);
+
+      // Alternatively, you can throw a NotFoundException which is a built-in exception in NestJS that automatically sets the status code to 404
+      // throw new NotFoundException(`Profile with id ${id} not found`);
+    }
+
     // Call the findOne method of the ProfilesService to get the profile with the specified id
     return this.profileService.findOne(id);
   }
