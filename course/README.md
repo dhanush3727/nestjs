@@ -148,3 +148,15 @@ In this example, if the profile with the specified id is not found, a `NotFoundE
 - `InternalServerErrorException`: Indicates that an unexpected error occurred on the server.
 You can also create custom exceptions by extending the built-in exceptions or by creating your own exception classes. For example, you could create a custom exception for a specific error scenario in your application, such as a `ProfileAlreadyExistsException` that is thrown when trying to create a profile that already exists. This allows you to provide more specific error messages and handle different error scenarios in a more granular way.
 
+## Pipes
+Pipes are a powerful feature in NestJS that allow you to transform and validate data before it is processed by a controller or service. Pipes can be used to perform tasks such as data validation, transformation, and sanitization.
+1. Transformation: Pipes can be used to transform incoming data into a desired format. For example, you can use a pipe to convert a string to a number or to parse a JSON object. Ex:
+```ts
+ @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return `This action returns a profile with the ID ${id}`;
+  }
+```
+In this example, the `ParseIntPipe` is used to transform the `id` parameter from a string to a number before it is passed to the `findOne` method.
+
+

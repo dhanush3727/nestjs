@@ -11,10 +11,12 @@ import {
   Patch,
   Post,
   Put,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CreateProfileDTO } from './dto/createPost.dto';
 import { UpdateProfile } from './dto/updatePost.dto';
 import { ProfilesService } from './profiles.service';
+import type { UUID } from 'crypto';
 
 @Controller('profiles')
 export class ProfilesController {
@@ -35,7 +37,8 @@ export class ProfilesController {
 
   // Get /profiles/:id - get a one profile using id
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  // Use ParseUUIDPipe to validate that the id parameter is a valid UUID. If it's not, NestJS will automatically return a 400 Bad Request response.
+  findOne(@Param('id', ParseUUIDPipe) id: UUID) {
     // Exception handling example
     const profile = this.profileService.findOne(id);
     if (!profile) {
@@ -65,14 +68,22 @@ export class ProfilesController {
 
   // Put /profiles/:id - update data
   @Put(':id')
-  update(@Param('id') id: string, @Body() updatePost: UpdateProfile) {
+  // Use ParseUUIDPipe to validate that the id parameter is a valid UUID. If it's not, NestJS will automatically return a 400 Bad Request response.
+  update(
+    @Param('id', ParseUUIDPipe) id: UUID,
+    @Body() updatePost: UpdateProfile,
+  ) {
     // Call the update method of the ProfilesService to update the profile with the specified id
     return this.profileService.update(id, updatePost);
   }
 
   // Patch /profiles/:id
   @Patch(':id')
-  patchUser(@Param('id') id: string, @Body() patchData: UpdateProfile) {
+  // Use ParseUUIDPipe to validate that the id parameter is a valid UUID. If it's not, NestJS will automatically return a 400 Bad Request response.
+  patchUser(
+    @Param('id', ParseUUIDPipe) id: UUID,
+    @Body() patchData: UpdateProfile,
+  ) {
     return {
       id,
       ...patchData,
@@ -82,7 +93,8 @@ export class ProfilesController {
   // Delete /profiles/:id - delete data
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteUser(@Param('id') id: string) {
+  // Use ParseUUIDPipe to validate that the id parameter is a valid UUID. If it's not, NestJS will automatically return a 400 Bad Request response.
+  deleteUser(@Param('id', ParseUUIDPipe) id: UUID) {
     // Call the delete method of the ProfilesService to delete the profile with the specified id
     return this.profileService.delete(id);
   }
