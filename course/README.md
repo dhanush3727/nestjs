@@ -159,4 +159,52 @@ Pipes are a powerful feature in NestJS that allow you to transform and validate 
 ```
 In this example, the `ParseIntPipe` is used to transform the `id` parameter from a string to a number before it is passed to the `findOne` method.
 
+2. Validation: Pipes can also be used to validate incoming data. For example, you can use a pipe to check if a required parameter is present or if a parameter meets certain criteria. Install `npm install class-validator class-transformer` Ex:
+```ts
+// createPost.dto.ts
+import { IsString, Length } from 'class-validator';
+export class CreateProfileDto {
+  @IsString() // Validate that the name property is a string
+  @Length(3, 30) // Validate that the name property has a length between 3 and 30 characters
+  name: string;
 
+  @IsString() // Validate that the id property is a string
+  id: number;
+}
+
+// profiles.controller.ts
+ @Post()
+  create(@Body(new ValidationPipe()) createProfileDto: CreateProfileDto) {
+    return 'This action adds a new profile';
+  }
+```
+In this example, the `ValidationPipe` is used to validate the incoming data against the `CreateProfileDto` class. The `CreateProfileDto` class uses decorators from the `class-validator` library to specify validation rules for the properties. If the incoming data does not meet the validation criteria, NestJS will automatically return a 400 Bad Request response with details about the validation errors.
+Pipes can be applied at different levels in NestJS:
+- Method level: You can apply a pipe to a specific method in a controller by using the `@UsePipes()` decorator. This will apply the pipe only to that method.
+- Controller level: You can apply a pipe to an entire controller by using the `@UsePipes()` decorator at the class level. This will apply the pipe to all methods in the controller.
+- Global level: You can apply a pipe globally to the entire application by using the `app.useGlobalPipes()` method in the main application file. This will apply the pipe to all controllers and methods in the application.
+Pipes are a powerful tool for ensuring that the data being processed by your application is in the correct format and meets the necessary validation criteria. By using pipes, you can keep your controllers and services clean and focused on their primary responsibilities, while the pipes handle data transformation and validation.
+
+## Guards
+Guards are a powerful feature in NestJS that allow you to control access to routes and resources based on certain conditions. Guards can be used to implement authentication, authorization, and other access control mechanisms in your application. Guards are defined using the `@Injectable()` decorator and must implement the `CanActivate` interface. The `CanActivate` interface requires you to implement a `canActivate()` method that returns a boolean value indicating whether the request should be allowed to proceed or not. Ex:
+```ts
+// profiles.guard.ts
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+@Injectable()
+export class ProfilesGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+    // Implement your guard logic here. For example, you can check if the user is authenticated or has the necessary permissions to access the resource.
+    return true; // Return true to allow access, or false to deny access.
+  }
+}
+```
+In this example, the `ProfilesGuard` class implements the `CanActivate` interface and defines the `canActivate()` method. Inside the `canActivate()` method, you can implement your guard logic to determine whether the request should be allowed to proceed or not. For example, you can check if the user is authenticated or if they have the necessary permissions to access the resource. To use a guard in a controller, you can apply it using the `@UseGuards()` decorator. This will ensure that the guard is executed before the route handler is called, allowing you to control access to the route based on the logic defined in the guard. Ex:
+```ts
+ @Delete(':id')
+  @UseGuards(ProfilesGuard) // Use the ProfilesGuard to protect this route. The guard will check if the request is authorized before allowing access to the deleteUser method.
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteUser(@Param('id', ParseUUIDPipe) id: UUID) {
+    // Route handler logic here
+  }
+```

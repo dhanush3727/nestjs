@@ -12,11 +12,13 @@ import {
   Post,
   Put,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateProfileDTO } from './dto/createPost.dto';
 import { UpdateProfile } from './dto/updatePost.dto';
 import { ProfilesService } from './profiles.service';
 import type { UUID } from 'crypto';
+import { ProfilesGuard } from './profiles.guard';
 
 @Controller('profiles')
 export class ProfilesController {
@@ -92,6 +94,7 @@ export class ProfilesController {
 
   // Delete /profiles/:id - delete data
   @Delete(':id')
+  @UseGuards(ProfilesGuard) // Use the ProfilesGuard to protect this route. The guard will check if the request is authorized before allowing access to the deleteUser method.
   @HttpCode(HttpStatus.NO_CONTENT)
   // Use ParseUUIDPipe to validate that the id parameter is a valid UUID. If it's not, NestJS will automatically return a 400 Bad Request response.
   deleteUser(@Param('id', ParseUUIDPipe) id: UUID) {
