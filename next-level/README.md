@@ -52,3 +52,110 @@ export class UsersService {
   // Business logic here
 }
 ```
+4. Middleware and Interceptors:
+  NestJS allows you to use middleware and interceptors to handle cross-cutting concerns such as logging, authentication, and error handling. Middleware runs before the request reaches the controller, while interceptors can manipulate the response after the controller has processed the request.
+```typescript
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, call$: Observable<any>): Observable<any> {
+    console.log('Before...');
+    const now = Date.now();
+    return call$.pipe(
+      tap(() => console.log(`After... ${Date.now() - now}ms`)),
+    );
+  }
+}
+```
+5. ExpenseIQ project structure in NestJS:
+```
+server/
+├── dist/                                   # compiled (auto)
+├── src/
+│
+│   ├── main.ts                             # entry point (replaces server.ts)
+│   ├── app.module.ts                       # root module
+│   ├── app.controller.ts                   # root controller
+│   ├── app.service.ts                      # root service
+|
+│   ├── common/                             # cross-cutting (NOT feature logic)
+│   │   ├── decorators/                     # custom decorators (e.g., @Roles)
+|   |   |   ├──user.decorator.ts            # custom user decorator for extracting user from request                
+│   │   ├── filters/                        # global exception filters
+|   |   |   ├──exception.filter.ts          # custom exception filter
+│   │   ├── guards/                         # global guards (e.g., RBAC)
+|   |   |   ├──auth.guard.ts                # custom auth guard for extracting user from request
+│   │   ├── interceptors/                   # global interceptors (e.g., logging)
+|   |   |   ├──fileUpload.interceptor.ts    # custom logging interceptor                   
+│
+│   ├── config/                             # config layer
+│   │   ├── configuration.ts                # centralized config (using @nestjs/config)
+│
+│   ├── database/                           # DB connection (clean separation)
+│   │   ├── mongoose.module.ts              # DB module (provides connection)
+│
+│   ├── shared/                             # reusable logic (controlled)
+│   │   ├── services/
+|   |   |   ├──cloudinary.service.ts        # custom cloudinary service for handling file uploads
+|   |   |   ├──mail.service.ts              # custom mail service for handling email operations
+│
+│   ├── modules/                            # CORE BUSINESS FEATURES
+│   │   ├── auth/                           # NEW (mandatory)
+│   │   │   ├── auth.module.ts
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.service.ts
+│   │   │   ├── strategies/                 # JWT strategy      
+│   │   │   ├── guards/                     # RBAC guards
+│   │   │   ├── dto/                        # auth DTOs
+│   │
+│   │   ├── users/
+│   │   │   ├── users.module.ts
+│   │   │   ├── users.controller.ts
+│   │   │   ├── users.service.ts
+│   │   │   ├── users.repository.ts
+│   │   │   ├── dto/
+│   │   │   ├── schemas/                    # Mongo schema
+│
+│   │   ├── transactions/
+│   │   │   ├── transactions.module.ts
+│   │   │   ├── transactions.controller.ts
+│   │   │   ├── transactions.service.ts
+│   │   │   ├── transactions.repository.ts
+│   │   │   ├── dto/
+│   │   │   ├── schemas/
+│
+│   │   ├── categories/
+│   │   │   ├── categories.module.ts
+│   │   │   ├── categories.controller.ts
+│   │   │   ├── categories.service.ts
+│   │   │   ├── categories.repository.ts
+│   │   │   ├── dto/
+│   │   │   ├── schemas/
+│
+│   │   ├── budgets/
+│   │   │   ├── budgets.module.ts
+│   │   │   ├── budgets.controller.ts
+│   │   │   ├── budgets.service.ts
+│   │   │   ├── budgets.repository.ts
+│   │   │   ├── dto/
+│   │   │   ├── schemas/
+│   │   │   ├── constants/
+│   │   │   ├── enums/
+│
+│   │   ├── insights/                  # heavy logic module
+│   │   │   ├── insights.module.ts
+│   │   │   ├── insights.controller.ts
+│   │   │   ├── insights.service.ts
+│   │   │   ├── dto/
+│
+│   │   ├── notifications/
+│   │   │   ├── notifications.module.ts
+│   │   │   ├── notifications.service.ts
+│   │   │   ├── schemas/
+│
+│   │   ├── overview/                  # optional aggregation layer
+│   │       ├── overview.module.ts
+│   │       ├── overview.controller.ts
+│   │       ├── overview.service.ts
+│
+│   ├── .env
+```
