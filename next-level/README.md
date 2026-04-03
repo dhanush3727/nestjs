@@ -159,3 +159,23 @@ server/
 │
 │   ├── .env
 ```
+## Auth(JWT + RBAC)
+1. JWT Authentication(access + refresh tokens):
+- JWT (Json Web Token) is a popular method for implementing authentication in web applications. It allows you to securely transmit information between parties as a JSON object.
+- JWT have three parts:
+  - Header: Contains metadata about the token, such as the signing algorithm and type.
+  - Payload: contain the claims, which are data about the user and any additional information you want to include.
+  - Signature: is created by signing the header and payload with a secret key. Check that the token is valid and has not been tampered with.
+- Login Flow: When user login with their credentials, the server verifies them and generates two tokens: an access token (short-lived) and a refersh token (long-lived).
+- Access Token: When client(browser) sent request to server the request have header authorization, this authorization have access token with bearer like `Authorization: Bearer <accessToken>`. The bearer is indicates that the token is JWT to server. The server will verify the access token and if valid, it will allow access to the protected resource. If the access token is expired, the server will return an error now the client can use the refresh token here.
+- Refresh Token: When the access token expires, the client can send a request to the server with the refresh token to obtain a new access token. The server will verify the refresh token and if valid, it will generate a new access and refresh token and return them to the client. Now client can use the new access token to access protected resources. If the refresh token is also expired or invalid, the client will need to log in again to obtain new tokens.
+- Store the tokens:
+  - Access Token: It is recommended to store the access token in memory.
+  - Refresh Token: It is recommended to store the refresh token in an HttpOnly cookie to prevent XSS attacks.
+
+2. Refresh Token Rotation:
+- Refresh token rotation, when every time we use refresh token to get new access token, we also issue a new refresh token and invalidate the old one. This helps to prevent replay attacks, where an attacker could use a stolen refresh token to obtain new access tokens.
+- Implementation:
+  - When the client sends a request to refresh the access token, the server verifies the refresh token.
+  - If the refresh token is valid, the server generates a new access token and a new refresh token.
+  - The server invalidates the old refresh token, ensuring that it cannot be used again.
