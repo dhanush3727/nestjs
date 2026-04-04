@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { MongooseModule } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
+import { AppConfigModule } from './config/config.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import mongoose, { Connection } from 'mongoose';
         },
       }),
     }),
+    AppConfigModule, // Import the AppConfigModule to make CloudinaryService and MailService available for dependency injection
     AuthModule,
   ],
   controllers: [AppController],
