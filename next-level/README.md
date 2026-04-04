@@ -179,3 +179,76 @@ server/
   - When the client sends a request to refresh the access token, the server verifies the refresh token.
   - If the refresh token is valid, the server generates a new access token and a new refresh token.
   - The server invalidates the old refresh token, ensuring that it cannot be used again.
+
+3. Secure Cookies:
+A cookie is just way for the browser to automatically send the data to server with every request. When we store refresh token in cookie, we should set the following flags to enhance security:
+- HttpOnly: This flag prevents JavaScript from accessing the cookie, which helps to mitigate XSS attacks. When a cookie is marked as HttpOnly, it cannot be accessed or modified by client-side scripts, making it more secure against cross-site scripting attacks.
+- Secure: This flag ensures that the cookie is only sent over HTTPS connections, which helps to prevent man-in-the-middle attacks. When a cookie is marked as Secure, it will only be transmitted over secure HTTPS connections, providing an additional layer of protection against interception by attackers.
+- SameSite: This flag helps to prevent CSRF attacks by controlling when cookies are sent with cross-site requests. The SameSite attribute can be set to "Strict", "Lax", or "None". "Strict" means the cookie will only be sent in a first-party context, "Lax" allows the cookie to be sent with top-level navigations and GET requests, while "None" allows the cookie to be sent in all contexts, but it must be marked as Secure.
+```typescript
+res.cookie('refreshToken', refreshToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'Strict',
+});
+```
+
+4. Role-Based Access Control (RBAC):
+RBAC is a method of restricting access to resources based on the roles of individual users within an organization.
+- Define Roles: First, you need to define the roles in your application (e.g., Admin, User, Guest).
+- Assign Roles to Users: Next, you need to assign roles to users. This can be done during user registration or through an admin interface.
+
+5. Guards in NestJS:
+Guards are a powerful feature in NestJS that allow you to implement authentication and authorization logic. You can create custom guards to check if a user has the necessary permissions to access a particular route.
+```typescript
+@Injectable()
+export class RolesGuard implements CanActivate { 
+  constructor(private readonly reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!requiredRoles) {
+      return true; // No roles required, allow access
+    }
+    const { user } = context.switchToHttp().getRequest();
+    return requiredRoles.some((role) => user.roles?.includes(role));
+  }
+}
+```
+In this example, the `RolesGuard` checks if the user has any of the required roles to access the route. You can use this guard in your controllers to protect routes based on user roles.
+```typescript
+@UseGuards(RolesGuard)
+@Roles('Admin')
+@Get('admin')
+getAdminData() {
+  // Only users with the 'Admin' role can access this route
+}
+```
+
+6. Device/Session Tracking:
+To enhance security, you can implement device or session tracking. This involves keeping track of the devices or sessions that a user has logged in from. If a user logs in from a new device or location, you can send an alert or require additional verification to ensure that it is the legitimate user. You can store device information (e.g., device type, IP address, location) in your database and associate it with the user's account. When a user logs in, you can check if the device is recognized and take appropriate actions if it is not.
+```typescript
+@Injectable()
+export class AuthService {
+  // ... other methods
+
+  async login(user: User, deviceInfo: DeviceInfo) {
+    // Generate tokens
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user);
+
+    // Store device info in the database
+    await this.deviceRepository.create({
+      userId: user.id,
+      deviceType: deviceInfo.type,
+      ipAddress: deviceInfo.ip,
+      location: deviceInfo.location,
+    });
+
+    return { accessToken, refreshToken };
+  }
+}
+```
