@@ -159,6 +159,7 @@ server/
 │
 │   ├── .env
 ```
+
 ## Auth(JWT + RBAC)
 1. JWT Authentication(access + refresh tokens):
 - JWT (Json Web Token) is a popular method for implementing authentication in web applications. It allows you to securely transmit information between parties as a JSON object.

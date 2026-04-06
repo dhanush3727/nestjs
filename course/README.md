@@ -20,6 +20,21 @@ import { ProfilesModule } from './profiles/profiles.module';
 export class AppModule {}
 ```
 
+## DTOs
+DTO stands for Data Transfer Object. In NestJS, DTOs are used to define the shape of the data that is being sent and received by the application. DTOs are typically used to validate incoming data and to ensure that the data being sent to the client is in the correct format. DTOs are defined as classes with properties that correspond to the expected data structure. You can use decorators from libraries like `class-validator` to add validation rules to the properties of the DTO. This allows you to ensure that the incoming data meets certain criteria before it is processed by the application. Ex:
+```ts
+import { IsString, Length } from 'class-validator';
+export class CreateProfileDto {
+  @IsString() // Validate that the name property is a string
+  @Length(3, 30) // Validate that the name property has a length between 3 and 30 characters
+  name: string;
+
+  @IsString() // Validate that the id property is a string
+  id: number;
+}
+```
+In this example, the `CreateProfileDto` class defines the expected structure of the data for creating a new profile. The `name` property is validated to ensure that it is a string and has a length between 3 and 30 characters, while the `id` property is validated to ensure that it is a string. By using DTOs, you can keep your controllers and services clean and focused on their primary responsibilities, while the DTOs handle data validation and ensure that the data being processed by your application is in the correct format.
+
 ## Controllers
 Controllers are responsible for handling incoming requests and returning responses to the client. In NestJS, controllers are defined using the `@Controller()` decorator. The `@Controller()` decorator takes an optional string argument that specifies the route path for the controller. If no path is provided, the controller will be registered at the root path.
 Ex: 
