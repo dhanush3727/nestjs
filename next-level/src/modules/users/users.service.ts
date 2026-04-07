@@ -32,7 +32,7 @@ export class UsersService {
 
     const token = jwt.sign(
       { userId: newUser._id },
-      this.configService.get<string>('JWT_SECRET'),
+      this.configService.get<string>('JWT_SECRET')!,
       { expiresIn: '1h' },
     );
 
