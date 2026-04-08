@@ -253,3 +253,73 @@ export class AuthService {
   }
 }
 ```
+
+## Database Design
+1. Schema Design:
+- When desigining your database schema, it's important to follow best practices to ensure that your data is organized efficiently and can be easily queried. Here are some key principles to keep in mind:
+- Normalization: This is the process of organizing your data to minimize redundancy and improve data integrity. It involves breaking down your data into smaller, related tables and establishing relationships between them. For example, instead of storing user information in a single table, you might have separate tables for users, profiles, and addresses, with foreign keys linking them together.
+- Indexing: Indexes can significantly improve query performance by allowing the database to quickly locate the relevant data. When designing your schema, consider which fields will be frequently queried and create indexes on those fields. For example, if you frequently query users by their email address, you might create an index on the email field in the users table.
+- Relationships: Establishing clear relationships between tables is crucial for maintaining data integrity and enabling efficient queries. Use foreign keys to link related tables together. For example, if you have a transactions table that references a users table, you would include a user_id foreign key in the transactions table to establish the relationship.
+- Data Types: Choose appropriate data types for your fields to ensure that your data is stored efficiently and can be easily queried. For example, if you have a field for storing dates, use a date or timestamp data type instead of a string to allow for easier date manipulation and querying.
+- Denormalization: In some cases, it may be beneficial to denormalize your data for performance reasons. This involves duplicating data across tables to reduce the number of joins needed for queries. However, be cautious when denormalizing, as it can lead to data inconsistencies if not managed properly.
+Ex: Database schema for expenseIQ project:
+Step 1: Identify entities and relationships
+- Users: Represents the users of the application.
+- Transactions: Represents the financial transactions made by users.
+- Categories: Represents the categories that transactions can be classified into.
+- Budgets: Represents the budgets set by users for different categories.
+
+Step 2: Define tables and fields
+- Users Table:
+  - id (primary key)
+  - email (unique)
+  - password
+  - name
+  - created_at
+  - updated_at
+- Transactions Table:
+  - id (primary key)
+  - user_id (foreign key referencing Users)
+  - amount
+  - category_id (foreign key referencing Categories)
+  - date
+  - name
+  - type (income or expense)
+  - created_at
+  - updated_at
+- Categories Table:
+  - id (primary key)
+  - user_id (foreign key referencing Users)
+  - name
+  - created_at
+  - updated_at
+- Budgets Table:
+  - id (primary key)
+  - user_id (foreign key referencing Users)
+  - category_id (foreign key referencing Categories)
+  - amount
+  - start_date
+  - end_date
+  - created_at
+  - updated_at
+
+Step 3: Establish relationships
+- Users to Transactions: One-to-Many (one user can have many transactions)
+- Users to Categories: One-to-Many (one user can have many categories)
+- Users to Budgets: One-to-Many (one user can have many budgets)
+- Categories to Transactions: One-to-Many (one category can have many transactions)
+- Categories to Budgets: One-to-Many (one category can have many budgets)
+
+Step 4: Create indexes
+- Create indexes on frequently queried fields such as user_id in the Transactions, Categories, and Budgets tables to improve query performance.
+```sql
+CREATE INDEX idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX idx_categories_user_id ON categories(user_id);
+CREATE INDEX idx_budgets_user_id ON budgets(user_id);
+```
+Step 5: Pagination and Query Optimization
+- When designing your database schema, consider how you will handle pagination for large datasets. This can be achieved by using LIMIT and OFFSET in your SQL queries or by implementing cursor-based pagination for better performance. Additionally, optimize your queries by selecting only the necessary fields and using appropriate JOINs to minimize the amount of data being retrieved from the database.
+```sql
+SELECT id, amount, date FROM transactions WHERE user_id = 1 ORDER BY date DESC LIMIT 10 OFFSET 0;
+```
+
