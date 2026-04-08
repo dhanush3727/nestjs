@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   // Create the NestJS application using the AppModule
@@ -12,6 +13,8 @@ async function bootstrap() {
 
   // Get the port number from the configuration, or default to 3000 if not specified
   const port = configService.get<number>('PORT') || 3000;
+
+  app.use(cookieParser()); // Use cookie-parser middleware to parse cookies in incoming requests
 
   // Enable CORS for all origins (you can customize this for production)
   app.enableCors({

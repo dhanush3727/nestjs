@@ -60,7 +60,7 @@ import { AppConfigModule } from './config/config.module';
     AppConfigModule, // Import the AppConfigModule to make CloudinaryService and MailService available for dependency injection
     AuthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController], // controllers used to handle incoming requests and return responses to the client
+  providers: [AppService], // providers used to handle business logic and interact with other services
 })
 export class AppModule {}

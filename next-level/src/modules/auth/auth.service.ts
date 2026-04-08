@@ -36,13 +36,15 @@ export class AuthService {
     const isMatch = await bcrypt.compare(dto.password, user.password);
 
     if (!isMatch) throw new UnauthorizedException();
+
+    return user;
   }
 
   // Generate the access and refresh token with user payload
   async generateTokens(user: any) {
     // user payload
     const payload = {
-      id: user.id,
+      sub: user.id,
       role: user.role,
     };
 
