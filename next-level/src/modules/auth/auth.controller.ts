@@ -8,11 +8,13 @@ import { AuthGuard } from '@nestjs/passport';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  // REGISTER
   @Post('register')
   async register(@Body() dto: any) {
     return this.authService.register(dto);
   }
 
+  // LOGIN
   @Post('login')
   async login(@Body() dto: any, @Res() res: Response) {
     const user = await this.authService.validateUser(dto);
@@ -35,10 +37,11 @@ export class AuthController {
     return res.json({ accessToken });
   }
 
+  // PROTECTED ROUTE
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) // Use the JwtAuthGuard to protect this route, ensuring that only authenticated users can access it.
   getProfile(@Req() req: any) {
-    console.log('User from request:', req.user); 
+    console.log('User from request:', req.user);
 
     return {
       message: 'Protected route success',
@@ -48,7 +51,7 @@ export class AuthController {
 
   // REFRESH (ROTATION)
   @Post('refresh')
-  @UseGuards(AuthGuard('jwt-refresh'))
+  @UseGuards(AuthGuard('jwt-refresh')) // Use the AuthGuard with the 'jwt-refresh' strategy to protect this route, ensuring that only requests with a valid refresh token can access it.
   async refresh(@Req() req: any, @Res() res: Response) {
     const { userId, refreshToken } = req.user;
 
@@ -81,7 +84,7 @@ export class AuthController {
 
   // LOGOUT
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard) // Use the JwtAuthGuard to protect this route, ensuring that only authenticated users can access it to log out.
   async logout(@Req() req: any, @Res() res: Response) {
     await this.authService['userRepo'].update(req.user.userId, {
       refreshToken: null,

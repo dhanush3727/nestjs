@@ -323,3 +323,317 @@ Step 5: Pagination and Query Optimization
 SELECT id, amount, date FROM transactions WHERE user_id = 1 ORDER BY date DESC LIMIT 10 OFFSET 0;
 ```
 
+## API Design
+1. REST API Standards:
+- When designing your REST API, it's important to follow established standards to ensure that your API is intuititve and easy to use for developers. Here are some key principles to keep in mind:
+- Use Nouns for Endpoints: You API endpoints should be based on nouns that represent the resources being accessed. For example, use /users to access user resources and
+/transactions to access transaction resources.
+- Use HTTP Methods Appropriately: Use the appropriate HTTP methods for different operations. For example, use GET to retrieve data, POST to create new resources, PUT to update existing resources, and DELETE to remove resources.
+- Use Plural Nouns: Use plural nouns for your endpoints to indicate that they represent collections of resources. For example, use /users instead of /user. In this users endpoint, you can perform create, read, update, and delete operations on user resources.
+
+2. Proper status codes:
+- Use appropriate HTTP status codes to indicate the outcome of API requests. For example, use 200 OK for successful GET requests, 201 Created for successful POST requests, 204 No Content for successful DELETE requests, and 400 Bad Request for invalid input.
+```ts
+@Get(':id')
+async getUser(@Param('id') id: string): Promise<User> {
+  const user = await this.usersService.findById(id);
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+  return user;
+}
+
+@Post()
+async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
+  const user = await this.usersService.create(createUserDto);
+  return user;
+}
+
+@Put(':id')
+async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
+  const user = await this.usersService.update(id, updateUserDto);
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+  return user;
+}
+
+@Delete(':id')
+async deleteUser(@Param('id') id: string): Promise<void> {
+  const result = await this.usersService.delete(id);
+  if (!result) {
+    throw new NotFoundException('User not found');
+  }
+}
+```
+
+3. Pagination API's:
+- When designing API endpoints that return lists of resources, it's important to implement pagination to improve performance and usability. This can be achieved by accepting query parameters for page number and page size, and returning a subset of the data along with metadata about the total number of resources and pages.
+```ts
+@Get()
+async getUsers(
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 10,
+): Promise<{ data: User[]; total: number; page: number; lastPage: number }> {
+  const [data, total] = await this.usersService.findAll({ page, limit });
+  return {
+    data,
+    total,
+    page,
+    lastPage: Math.ceil(total / limit),
+  };
+}
+```
+
+5. Filtering and Sorting:
+- Allow clients to filter and sort data by accepting query parameters for filtering criteria and sort order. This can be implemented by parsing the query parameters and applying the appropriate filters and sorting logic in your service layer.
+```ts
+@Get()
+async getTransactions(
+  @Query('category') category: string,
+  @Query('sort') sort: 'asc' | 'desc' = 'asc',
+): Promise<Transaction[]> {
+  return this.transactionsService.findAll({ category, sort });
+}
+```
+
+6. Versioning:
+- Implement API versioning to allow for changes and improvements to your API without breaking existing clients. This can be done by including the version number in the URL (e.g., /api/v1/users) or by using custom headers to specify the API version.
+```ts
+// Using version number in URL
+@Controller('api/v1/users')
+export class UsersController {
+  // ... controller methods
+}
+
+// Using custom headers
+@Controller('users')
+export class UsersController {
+  @Get()
+  async getUsers(@Headers('API-Version') apiVersion: string): Promise<User[]> {
+    if (apiVersion === '1') {
+      // Return data in format for version 1
+    } else if (apiVersion === '2') {
+      // Return data in format for version 2
+    } else {
+      throw new BadRequestException('Unsupported API version');
+    }
+  }
+}
+```
+
+7. Example of API design
+```ts
+// main.ts
+ app.enableVersioning({
+    type: VersioningType.URI,
+  });
+
+// createTransaction.dto.ts
+import { IsNumber, IsString, IsEnum } from 'class-validator';
+
+export class CreateTransactionDto {
+  @IsNumber()
+  amount!: number;
+
+  @IsEnum(['income', 'expense'])
+  type!: 'income' | 'expense';
+
+  @IsString()
+  category!: string;
+
+  @IsString()
+  note!: string;
+}
+
+// TransactionQueryDto.dto.ts
+import { IsOptional, IsNumberString, IsString } from 'class-validator';
+
+export class TransactionQueryDto {
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  page?: number;
+
+  @IsOptional()
+  @IsNumberString()
+  limit?: number;
+}
+
+// updateTransaction.dto.ts
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateTransactionDto } from './createTransaction.dto';
+export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {}
+
+// transactions.controller.ts
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { CreateTransactionDto } from './dto/createTransaction.dto';
+import { TransactionQueryDto } from './dto/TransactionQueryDto.dto';
+import { UpdateTransactionDto } from './dto/updateTransaction.dto';
+
+type Transaction = {
+  id: string;
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
+  note: string;
+};
+
+@Controller({
+  path: 'transactions',
+  version: '1',
+})
+export class TransactionController {
+  private transactions: Transaction[] = [];
+
+  // Create a new transaction
+  @Post()
+  create(@Body() dto: CreateTransactionDto) {
+    const newTx = { id: Date.now().toString(), ...dto };
+    this.transactions.push(newTx);
+
+    return {
+      success: true,
+      data: newTx,
+      message: 'Transaction created',
+    };
+  }
+
+  // Get all transactions
+  @Get()
+  findAll(@Query() query: TransactionQueryDto) {
+    let data = [...this.transactions];
+
+    // Filtering
+    if (query.type) {
+      data = data.filter((tx) => tx.type === query.type);
+    }
+
+    if (query.category) {
+      data = data.filter((tx) => tx.category === query.category);
+    }
+
+    // Sorting
+    if (query.sort) {
+      const [field, order] = query.sort.split(':');
+      data.sort((a, b) => {
+        if (a[field] < b[field]) return order === 'desc' ? 1 : -1;
+        if (a[field] > b[field]) return order === 'desc' ? -1 : 1;
+        return 0;
+      });
+    }
+
+    // Pagination
+    const page = query.page ? parseInt(query.page.toString(), 10) : 1;
+    const limit = query.limit ? parseInt(query.limit.toString(), 10) : 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginated = data.slice(startIndex, endIndex);
+
+    return {
+      success: true,
+      data: paginated,
+      meta: {
+        total: data.length,
+        page,
+        limit,
+      },
+    };
+  }
+
+  // Get a transaction by ID
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    const tx = this.transactions.find((t) => t.id === id);
+
+    if (!tx) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    return {
+      success: true,
+      data: tx,
+    };
+  }
+
+  // Update transaction
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateTransactionDto) {
+    const index = this.transactions.findIndex((t) => t.id === id);
+
+    if (index === -1) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    this.transactions[index] = { ...this.transactions[index], ...dto };
+
+    return {
+      success: true,
+      data: this.transactions[index],
+      message: 'Transaction updated',
+    };
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    const index = this.transactions.findIndex((t) => t.id === id);
+
+    if (index === -1) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    const deleted = this.transactions.splice(index, 1);
+
+    return {
+      success: true,
+      data: deleted[0],
+      message: 'Transaction deleted',
+    };
+  }
+}
+
+// transactions.controller.v2.ts
+import { Controller, Get } from '@nestjs/common';
+
+@Controller({
+  path: 'transactions',
+  version: '2',
+})
+export class TransactionsControllerV2 {
+  @Get()
+  getTransactions() {
+    return {
+      success: true,
+      data: [
+        {
+          id: '1',
+          totalAmount: 500,
+          currency: 'INR',
+        },
+      ],
+    };
+  }
+}
+```
+In this example, we have designed a RESTful API for managing transactions in an expense tracking application. The API follows REST standards, uses appropriate HTTP methods and status codes, implements pagination, filtering, and sorting, and includes versioning to allow for future changes without breaking existing clients.

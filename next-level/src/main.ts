@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
@@ -31,6 +31,11 @@ async function bootstrap() {
       transform: true, // Automatically transform payloads to DTO instances
     }),
   );
+
+  // Enable versioning for the API (optional, but recommended for future-proofing)
+  app.enableVersioning({
+    type: VersioningType.URI, // Use URI versioning (e.g., /v1/endpoint)
+  });
 
   // Start the server and listen on the specified port
   await app.listen(port, () => {
