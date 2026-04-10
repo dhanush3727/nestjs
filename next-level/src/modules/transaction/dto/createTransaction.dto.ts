@@ -1,7 +1,8 @@
-import { IsNumber, IsString, IsEnum } from 'class-validator';
+import { IsNumber, Min, IsString, IsEnum } from 'class-validator';
 
 export class CreateTransactionDto {
   @IsNumber()
+  @Min(1)
   amount!: number;
 
   @IsEnum(['income', 'expense'])

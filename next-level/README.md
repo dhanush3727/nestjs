@@ -1,4 +1,5 @@
 # NestJS Next Level Learning
+
 - Backend Architecture
 - Auth(JWT + RBAC)
 - Database Design
@@ -12,15 +13,18 @@
 - Testing
 
 ## Backend Architecture
+
 1. Modular Architecture:
-  NestJS follows a modular architecture, allowing you to organize your code into modules, controllers, and services. This promotes separation of concerns and makes it easier to maintain and scale your application. Each layer should have only one responsibility
-  - **Controller**: Handles incoming requests and returns responses. It should not contain business logic.
-  - **Service**: Contains business logic and interacts other services. It should not handle HTTP requests directly.
-  - **Repository**: Handles database interactions. It should not contain business logic or HTTP handling.
-  - **DTO**: Data Transfer Objects are used to define the shape of data being sent and received. They help with validation and ensure that your API contracts are clear.
-  - **Module**: Groups related controllers, services, and providers together. It helps to organize your application into cohesive units.
+   NestJS follows a modular architecture, allowing you to organize your code into modules, controllers, and services. This promotes separation of concerns and makes it easier to maintain and scale your application. Each layer should have only one responsibility
+
+- **Controller**: Handles incoming requests and returns responses. It should not contain business logic.
+- **Service**: Contains business logic and interacts other services. It should not handle HTTP requests directly.
+- **Repository**: Handles database interactions. It should not contain business logic or HTTP handling.
+- **DTO**: Data Transfer Objects are used to define the shape of data being sent and received. They help with validation and ensure that your API contracts are clear.
+- **Module**: Groups related controllers, services, and providers together. It helps to organize your application into cohesive units.
 
 2. Example of module structure:
+
 ```
 src/
   users/
@@ -42,31 +46,38 @@ src/
       register.dto.ts
   app.module.ts
 ```
+
 3. Dependency Injection:
-  NestJS has a powerful dependency injection system that allows you to manage your application's dependencies efficiently. You can inject services into controllers and other services, making it easier to test and maintain your code.
+   NestJS has a powerful dependency injection system that allows you to manage your application's dependencies efficiently. You can inject services into controllers and other services, making it easier to test and maintain your code.
+
 ```typescript
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
-  
+
   // Business logic here
 }
 ```
+
 4. Middleware and Interceptors:
-  NestJS allows you to use middleware and interceptors to handle cross-cutting concerns such as logging, authentication, and error handling. Middleware runs before the request reaches the controller, while interceptors can manipulate the response after the controller has processed the request.
+   NestJS allows you to use middleware and interceptors to handle cross-cutting concerns such as logging, authentication, and error handling. Middleware runs before the request reaches the controller, while interceptors can manipulate the response after the controller has processed the request.
+
 ```typescript
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, call$: Observable<any>): Observable<any> {
+  intercept(
+    context: ExecutionContext,
+    call$: Observable<any>,
+  ): Observable<any> {
     console.log('Before...');
     const now = Date.now();
-    return call$.pipe(
-      tap(() => console.log(`After... ${Date.now() - now}ms`)),
-    );
+    return call$.pipe(tap(() => console.log(`After... ${Date.now() - now}ms`)));
   }
 }
 ```
+
 5. ExpenseIQ project structure in NestJS:
+
 ```
 server/
 ├── dist/                                   # compiled (auto)
@@ -79,13 +90,13 @@ server/
 |
 │   ├── common/                             # cross-cutting (NOT feature logic)
 │   │   ├── decorators/                     # custom decorators (e.g., @Roles)
-|   |   |   ├──user.decorator.ts            # custom user decorator for extracting user from request                
+|   |   |   ├──user.decorator.ts            # custom user decorator for extracting user from request
 │   │   ├── filters/                        # global exception filters
 |   |   |   ├──exception.filter.ts          # custom exception filter
 │   │   ├── guards/                         # global guards (e.g., RBAC)
 |   |   |   ├──auth.guard.ts                # custom auth guard for extracting user from request
 │   │   ├── interceptors/                   # global interceptors (e.g., logging)
-|   |   |   ├──fileUpload.interceptor.ts    # custom logging interceptor                   
+|   |   |   ├──fileUpload.interceptor.ts    # custom logging interceptor
 │
 │   ├── config/                             # config layer
 │   │   ├── configuration.ts                # centralized config (using @nestjs/config)
@@ -103,7 +114,7 @@ server/
 │   │   │   ├── auth.module.ts
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── auth.service.ts
-│   │   │   ├── strategies/                 # JWT strategy      
+│   │   │   ├── strategies/                 # JWT strategy
 │   │   │   ├── guards/                     # RBAC guards
 │   │   │   ├── dto/                        # auth DTOs
 │   │
@@ -161,7 +172,9 @@ server/
 ```
 
 ## Auth(JWT + RBAC)
+
 1. JWT Authentication(access + refresh tokens):
+
 - JWT (Json Web Token) is a popular method for implementing authentication in web applications. It allows you to securely transmit information between parties as a JSON object.
 - JWT have three parts:
   - Header: Contains metadata about the token, such as the signing algorithm and type.
@@ -175,6 +188,7 @@ server/
   - Refresh Token: It is recommended to store the refresh token in an HttpOnly cookie to prevent XSS attacks.
 
 2. Refresh Token Rotation:
+
 - Refresh token rotation, when every time we use refresh token to get new access token, we also issue a new refresh token and invalidate the old one. This helps to prevent replay attacks, where an attacker could use a stolen refresh token to obtain new access tokens.
 - Implementation:
   - When the client sends a request to refresh the access token, the server verifies the refresh token.
@@ -182,10 +196,12 @@ server/
   - The server invalidates the old refresh token, ensuring that it cannot be used again.
 
 3. Secure Cookies:
-A cookie is just way for the browser to automatically send the data to server with every request. When we store refresh token in cookie, we should set the following flags to enhance security:
+   A cookie is just way for the browser to automatically send the data to server with every request. When we store refresh token in cookie, we should set the following flags to enhance security:
+
 - HttpOnly: This flag prevents JavaScript from accessing the cookie, which helps to mitigate XSS attacks. When a cookie is marked as HttpOnly, it cannot be accessed or modified by client-side scripts, making it more secure against cross-site scripting attacks.
 - Secure: This flag ensures that the cookie is only sent over HTTPS connections, which helps to prevent man-in-the-middle attacks. When a cookie is marked as Secure, it will only be transmitted over secure HTTPS connections, providing an additional layer of protection against interception by attackers.
 - SameSite: This flag helps to prevent CSRF attacks by controlling when cookies are sent with cross-site requests. The SameSite attribute can be set to "Strict", "Lax", or "None". "Strict" means the cookie will only be sent in a first-party context, "Lax" allows the cookie to be sent with top-level navigations and GET requests, while "None" allows the cookie to be sent in all contexts, but it must be marked as Secure.
+
 ```typescript
 res.cookie('refreshToken', refreshToken, {
   httpOnly: true,
@@ -195,15 +211,17 @@ res.cookie('refreshToken', refreshToken, {
 ```
 
 4. Role-Based Access Control (RBAC):
-RBAC is a method of restricting access to resources based on the roles of individual users within an organization.
+   RBAC is a method of restricting access to resources based on the roles of individual users within an organization.
+
 - Define Roles: First, you need to define the roles in your application (e.g., Admin, User, Guest).
 - Assign Roles to Users: Next, you need to assign roles to users. This can be done during user registration or through an admin interface.
 
 5. Guards in NestJS:
-Guards are a powerful feature in NestJS that allow you to implement authentication and authorization logic. You can create custom guards to check if a user has the necessary permissions to access a particular route.
+   Guards are a powerful feature in NestJS that allow you to implement authentication and authorization logic. You can create custom guards to check if a user has the necessary permissions to access a particular route.
+
 ```typescript
 @Injectable()
-export class RolesGuard implements CanActivate { 
+export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -219,7 +237,9 @@ export class RolesGuard implements CanActivate {
   }
 }
 ```
+
 In this example, the `RolesGuard` checks if the user has any of the required roles to access the route. You can use this guard in your controllers to protect routes based on user roles.
+
 ```typescript
 @UseGuards(RolesGuard)
 @Roles('Admin')
@@ -230,7 +250,8 @@ getAdminData() {
 ```
 
 6. Device/Session Tracking:
-To enhance security, you can implement device or session tracking. This involves keeping track of the devices or sessions that a user has logged in from. If a user logs in from a new device or location, you can send an alert or require additional verification to ensure that it is the legitimate user. You can store device information (e.g., device type, IP address, location) in your database and associate it with the user's account. When a user logs in, you can check if the device is recognized and take appropriate actions if it is not.
+   To enhance security, you can implement device or session tracking. This involves keeping track of the devices or sessions that a user has logged in from. If a user logs in from a new device or location, you can send an alert or require additional verification to ensure that it is the legitimate user. You can store device information (e.g., device type, IP address, location) in your database and associate it with the user's account. When a user logs in, you can check if the device is recognized and take appropriate actions if it is not.
+
 ```typescript
 @Injectable()
 export class AuthService {
@@ -255,21 +276,24 @@ export class AuthService {
 ```
 
 ## Database Design
+
 1. Schema Design:
+
 - When desigining your database schema, it's important to follow best practices to ensure that your data is organized efficiently and can be easily queried. Here are some key principles to keep in mind:
 - Normalization: This is the process of organizing your data to minimize redundancy and improve data integrity. It involves breaking down your data into smaller, related tables and establishing relationships between them. For example, instead of storing user information in a single table, you might have separate tables for users, profiles, and addresses, with foreign keys linking them together.
 - Indexing: Indexes can significantly improve query performance by allowing the database to quickly locate the relevant data. When designing your schema, consider which fields will be frequently queried and create indexes on those fields. For example, if you frequently query users by their email address, you might create an index on the email field in the users table.
 - Relationships: Establishing clear relationships between tables is crucial for maintaining data integrity and enabling efficient queries. Use foreign keys to link related tables together. For example, if you have a transactions table that references a users table, you would include a user_id foreign key in the transactions table to establish the relationship.
 - Data Types: Choose appropriate data types for your fields to ensure that your data is stored efficiently and can be easily queried. For example, if you have a field for storing dates, use a date or timestamp data type instead of a string to allow for easier date manipulation and querying.
 - Denormalization: In some cases, it may be beneficial to denormalize your data for performance reasons. This involves duplicating data across tables to reduce the number of joins needed for queries. However, be cautious when denormalizing, as it can lead to data inconsistencies if not managed properly.
-Ex: Database schema for expenseIQ project:
-Step 1: Identify entities and relationships
+  Ex: Database schema for expenseIQ project:
+  Step 1: Identify entities and relationships
 - Users: Represents the users of the application.
 - Transactions: Represents the financial transactions made by users.
 - Categories: Represents the categories that transactions can be classified into.
 - Budgets: Represents the budgets set by users for different categories.
 
 Step 2: Define tables and fields
+
 - Users Table:
   - id (primary key)
   - email (unique)
@@ -304,6 +328,7 @@ Step 2: Define tables and fields
   - updated_at
 
 Step 3: Establish relationships
+
 - Users to Transactions: One-to-Many (one user can have many transactions)
 - Users to Categories: One-to-Many (one user can have many categories)
 - Users to Budgets: One-to-Many (one user can have many budgets)
@@ -311,28 +336,37 @@ Step 3: Establish relationships
 - Categories to Budgets: One-to-Many (one category can have many budgets)
 
 Step 4: Create indexes
+
 - Create indexes on frequently queried fields such as user_id in the Transactions, Categories, and Budgets tables to improve query performance.
+
 ```sql
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_categories_user_id ON categories(user_id);
 CREATE INDEX idx_budgets_user_id ON budgets(user_id);
 ```
+
 Step 5: Pagination and Query Optimization
+
 - When designing your database schema, consider how you will handle pagination for large datasets. This can be achieved by using LIMIT and OFFSET in your SQL queries or by implementing cursor-based pagination for better performance. Additionally, optimize your queries by selecting only the necessary fields and using appropriate JOINs to minimize the amount of data being retrieved from the database.
+
 ```sql
 SELECT id, amount, date FROM transactions WHERE user_id = 1 ORDER BY date DESC LIMIT 10 OFFSET 0;
 ```
 
 ## API Design
+
 1. REST API Standards:
+
 - When designing your REST API, it's important to follow established standards to ensure that your API is intuititve and easy to use for developers. Here are some key principles to keep in mind:
 - Use Nouns for Endpoints: You API endpoints should be based on nouns that represent the resources being accessed. For example, use /users to access user resources and
-/transactions to access transaction resources.
+  /transactions to access transaction resources.
 - Use HTTP Methods Appropriately: Use the appropriate HTTP methods for different operations. For example, use GET to retrieve data, POST to create new resources, PUT to update existing resources, and DELETE to remove resources.
 - Use Plural Nouns: Use plural nouns for your endpoints to indicate that they represent collections of resources. For example, use /users instead of /user. In this users endpoint, you can perform create, read, update, and delete operations on user resources.
 
 2. Proper status codes:
+
 - Use appropriate HTTP status codes to indicate the outcome of API requests. For example, use 200 OK for successful GET requests, 201 Created for successful POST requests, 204 No Content for successful DELETE requests, and 400 Bad Request for invalid input.
+
 ```ts
 @Get(':id')
 async getUser(@Param('id') id: string): Promise<User> {
@@ -368,7 +402,9 @@ async deleteUser(@Param('id') id: string): Promise<void> {
 ```
 
 3. Pagination API's:
+
 - When designing API endpoints that return lists of resources, it's important to implement pagination to improve performance and usability. This can be achieved by accepting query parameters for page number and page size, and returning a subset of the data along with metadata about the total number of resources and pages.
+
 ```ts
 @Get()
 async getUsers(
@@ -386,7 +422,9 @@ async getUsers(
 ```
 
 5. Filtering and Sorting:
+
 - Allow clients to filter and sort data by accepting query parameters for filtering criteria and sort order. This can be implemented by parsing the query parameters and applying the appropriate filters and sorting logic in your service layer.
+
 ```ts
 @Get()
 async getTransactions(
@@ -398,7 +436,9 @@ async getTransactions(
 ```
 
 6. Versioning:
+
 - Implement API versioning to allow for changes and improvements to your API without breaking existing clients. This can be done by including the version number in the URL (e.g., /api/v1/users) or by using custom headers to specify the API version.
+
 ```ts
 // Using version number in URL
 @Controller('api/v1/users')
@@ -423,11 +463,12 @@ export class UsersController {
 ```
 
 7. Example of API design
+
 ```ts
 // main.ts
- app.enableVersioning({
-    type: VersioningType.URI,
-  });
+app.enableVersioning({
+  type: VersioningType.URI,
+});
 
 // createTransaction.dto.ts
 import { IsNumber, IsString, IsEnum } from 'class-validator';
@@ -636,4 +677,262 @@ export class TransactionsControllerV2 {
   }
 }
 ```
+
 In this example, we have designed a RESTful API for managing transactions in an expense tracking application. The API follows REST standards, uses appropriate HTTP methods and status codes, implements pagination, filtering, and sorting, and includes versioning to allow for future changes without breaking existing clients.
+
+## Error Handling
+
+Error handling is a critical aspect of any application, as it ensures that your application can gracefully handle unexpected situations and provide meaningful feedback to users. In NestJS, you can implement error handling using exception filters, which allow you to catch and handle exceptions thrown in your application.
+
+1. DTO Validataion:
+
+- Use DTOs to validate incoming data and ensure that it meets the expected format and constraints. This can be done using class-validator decorators in your DTO classes. Ex:
+
+```ts
+// createTransaction.dto.ts
+import { IsString, IsNumber, IsEnum, Min } from 'class-validator';
+
+export class CreateTransactionDto {
+  @IsNumber()
+  @Min(1)
+  amount: number;
+
+  @IsEnum(['income', 'expense'])
+  type: 'income' | 'expense';
+
+  @IsString()
+  category: string;
+
+  @IsString()
+  note: string;
+}
+
+// main.ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true, // Strip properties that do not have decorators
+    forbidNonWhitelisted: true, // Throw an error if non-whitelisted properties are present
+    transform: true, // Automatically transform payloads to DTO instances
+  }),
+);
+```
+
+In this example if user give the request give the bad request like
+
+```json
+{
+  "amount": -100,
+  "type": "invalid",
+  "category": "Food",
+  "note": "Dinner"
+}
+```
+
+The validation pipe will catch the error and return a 400 Bad Request response with details about the validation errors:
+
+```json
+{
+  "statusCode": 400,
+  "message": [
+    "amount must not be less than 1",
+    "type must be one of the following values: income, expense"
+  ],
+  "error": "Bad Request"
+}
+```
+
+2. Exception Filters:
+
+- Use exception filters to catch and handle exceptions thrown in your application. You can create custom exception filters to handle specific types of errors and return appropriate responses to the client. Ex:
+
+```ts
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+
+if (!transaction) {
+  throw new NotFoundException('Transaction not found');
+}
+
+if (amount <= 0) {
+  throw new BadRequestException('Invalid amount');
+}
+```
+
+In this example, if a transaction is not found it return
+
+```json
+{
+  "statusCode": 404,
+  "message": "Transaction not found",
+  "error": "Not Found"
+}
+```
+
+3. Global Exception Filter:
+
+- You can also create a global exception filter to catch any unhandled exceptions and return a generic error response. This can help to ensure that your application does not expose sensitive information in error messages and provides a consistent error response format.
+
+```ts
+// exception.filter.ts
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const message = exception.getResponse();
+
+      response.status(status).json({
+        success: false,
+        message,
+      });
+    } else {
+      response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'An unexpected error occurred',
+      });
+    }
+  }
+}
+
+// main.ts
+app.useGlobalFilters(new GlobalExceptionFilter());
+```
+
+In this example, any unhandled exceptions will be caught by the GlobalExceptionFilter and return a 500 Internal Server Error response with a generic error message:
+
+```json
+{
+  "success": false,
+  "message": "An unexpected error occurred"
+}
+```
+
+4. Custome Error Handling Logic:
+
+- In addition to using exception filters, you can also implement custom error handling logic in your services or controllers. This can be useful for handling specific business logic errors or for logging errors for debugging purposes.
+
+```ts
+throw new BadRequestException({
+  code: 'INSUFFICIENT_BALANCE',
+  message: 'You don’t have enough balance',
+});
+```
+
+In this example, we throw a BadRequestException with a custom error code and message. The
+client will receive a 400 Bad Request response with the custom error details:
+
+```json
+{
+  "statusCode": 400,
+  "message": {
+    "code": "INSUFFICIENT_BALANCE",
+    "message": "You don’t have enough balance"
+  },
+  "error": "Bad Request"
+}
+```
+Example of error handling:
+- Custom Validation Error Format:
+```ts
+// main.ts
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, 
+      forbidNonWhitelisted: true, 
+      transform: true, 
+      exceptionFactory: (errors) => {
+        const formattedErrors = errors.map((error) => ({
+          field: error.property, 
+            errors: Object.values(error.constraints || {}), 
+          }));
+
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: formattedErrors,
+        });
+      },
+    }),
+  );
+```
+In this case, if the validation fails, the client will receive a 400 Bad Request response with a structured error message that includes the field name and the specific validation errors for each field:
+
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "amount",
+      "errors": ["amount must not be less than 1"]
+    },
+    {
+      "field": "type",
+      "errors": ["type must be one of the following values: income, expense"]
+    }
+  ]
+}
+```
+- Global Exception Filter for Unhandled Exceptions:
+```ts
+// exception.filter.ts
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+} from '@nestjs/common';
+
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+
+    let status = 500;
+    let message: string = 'Internal Server Error';
+    let errors = null;
+
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const res = exception.getResponse();
+
+      if (typeof res === 'string') {
+        message = res;
+      } else {
+        const r = res as any;
+        message = r.message || message;
+        errors = r.errors || null;
+      }
+    }
+
+    response.status(status).json({
+      success: false,
+      statusCode: status,
+      message,
+      errors,
+    });
+  }
+}
+
+// main.ts
+app.useGlobalFilters(new GlobalExceptionFilter());
+```
+In this code:
+- We catch all exceptions using the `@Catch()` decorator.
+- Create a GlobalExceptionFilter that implements the `ExceptionFilter` interface.
+- In the `catch` method, we determine the HTTP status code and message based on whether the exception is an instance of `HttpException`.
+- In the `ctx` object, we get the response object to send the error response back to the client.
+- The `response` is structured to include a success flag, status code, message, and any additional errors if available.
+- Check `if (exception instanceof HttpException)` to handle known HTTP exceptions and extract their status and message. For unknown exceptions, we default to a 500 Internal Server Error with a generic message.
+- This filter will catch any unhandled exceptions in the application and return a consistent error response format to the client, improving the overall error handling and user experience.
+- With this setup, you can ensure that all errors in your application are handled gracefully and provide meaningful feedback to users while also maintaining security by not exposing sensitive information in error messages.

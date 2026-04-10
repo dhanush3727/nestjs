@@ -1,8 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  BadRequestException,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { GlobalExceptionFilter } from './common/filters/exception.filter';
 
 async function bootstrap() {
   // Create the NestJS application using the AppModule
@@ -29,8 +34,22 @@ async function bootstrap() {
       whitelist: true, // Strip properties that do not have any decorators
       forbidNonWhitelisted: true, // Throw an error if non-whitelisted properties are present
       transform: true, // Automatically transform payloads to DTO instances
+      exceptionFactory: (errors) => {
+        // Format the validation errors to return a more user-friendly response
+        const formattedErrors = errors.map((error) => ({
+          field: error.property, // The name of the field that failed validation
+          errors: Object.values(error.constraints || {}), // The validation error messages for the field
+        }));
+        // Return a BadRequestException with the formatted validation errors
+        return new BadRequestException({
+          message: 'Validation failed',
+          errors: formattedErrors,
+        });
+      },
     }),
   );
+
+  app.useGlobalFilters(new GlobalExceptionFilter()); // Use the GlobalExceptionFilter to handle all exceptions in a consistent way
 
   // Enable versioning for the API (optional, but recommended for future-proofing)
   app.enableVersioning({
