@@ -13,18 +13,14 @@
 - Testing
 
 ## Backend Architecture
-
 1. Modular Architecture:
    NestJS follows a modular architecture, allowing you to organize your code into modules, controllers, and services. This promotes separation of concerns and makes it easier to maintain and scale your application. Each layer should have only one responsibility
-
 - **Controller**: Handles incoming requests and returns responses. It should not contain business logic.
 - **Service**: Contains business logic and interacts other services. It should not handle HTTP requests directly.
 - **Repository**: Handles database interactions. It should not contain business logic or HTTP handling.
 - **DTO**: Data Transfer Objects are used to define the shape of data being sent and received. They help with validation and ensure that your API contracts are clear.
 - **Module**: Groups related controllers, services, and providers together. It helps to organize your application into cohesive units.
-
 2. Example of module structure:
-
 ```
 src/
   users/
@@ -46,10 +42,8 @@ src/
       register.dto.ts
   app.module.ts
 ```
-
 3. Dependency Injection:
    NestJS has a powerful dependency injection system that allows you to manage your application's dependencies efficiently. You can inject services into controllers and other services, making it easier to test and maintain your code.
-
 ```typescript
 @Injectable()
 export class UsersService {
@@ -58,10 +52,8 @@ export class UsersService {
   // Business logic here
 }
 ```
-
 4. Middleware and Interceptors:
    NestJS allows you to use middleware and interceptors to handle cross-cutting concerns such as logging, authentication, and error handling. Middleware runs before the request reaches the controller, while interceptors can manipulate the response after the controller has processed the request.
-
 ```typescript
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -75,9 +67,7 @@ export class LoggingInterceptor implements NestInterceptor {
   }
 }
 ```
-
 5. ExpenseIQ project structure in NestJS:
-
 ```
 server/
 ├── dist/                                   # compiled (auto)
@@ -172,9 +162,7 @@ server/
 ```
 
 ## Auth(JWT + RBAC)
-
 1. JWT Authentication(access + refresh tokens):
-
 - JWT (Json Web Token) is a popular method for implementing authentication in web applications. It allows you to securely transmit information between parties as a JSON object.
 - JWT have three parts:
   - Header: Contains metadata about the token, such as the signing algorithm and type.
@@ -186,22 +174,17 @@ server/
 - Store the tokens:
   - Access Token: It is recommended to store the access token in memory.
   - Refresh Token: It is recommended to store the refresh token in an HttpOnly cookie to prevent XSS attacks.
-
 2. Refresh Token Rotation:
-
 - Refresh token rotation, when every time we use refresh token to get new access token, we also issue a new refresh token and invalidate the old one. This helps to prevent replay attacks, where an attacker could use a stolen refresh token to obtain new access tokens.
 - Implementation:
   - When the client sends a request to refresh the access token, the server verifies the refresh token.
   - If the refresh token is valid, the server generates a new access token and a new refresh token.
   - The server invalidates the old refresh token, ensuring that it cannot be used again.
-
 3. Secure Cookies:
    A cookie is just way for the browser to automatically send the data to server with every request. When we store refresh token in cookie, we should set the following flags to enhance security:
-
 - HttpOnly: This flag prevents JavaScript from accessing the cookie, which helps to mitigate XSS attacks. When a cookie is marked as HttpOnly, it cannot be accessed or modified by client-side scripts, making it more secure against cross-site scripting attacks.
 - Secure: This flag ensures that the cookie is only sent over HTTPS connections, which helps to prevent man-in-the-middle attacks. When a cookie is marked as Secure, it will only be transmitted over secure HTTPS connections, providing an additional layer of protection against interception by attackers.
 - SameSite: This flag helps to prevent CSRF attacks by controlling when cookies are sent with cross-site requests. The SameSite attribute can be set to "Strict", "Lax", or "None". "Strict" means the cookie will only be sent in a first-party context, "Lax" allows the cookie to be sent with top-level navigations and GET requests, while "None" allows the cookie to be sent in all contexts, but it must be marked as Secure.
-
 ```typescript
 res.cookie('refreshToken', refreshToken, {
   httpOnly: true,
@@ -209,16 +192,12 @@ res.cookie('refreshToken', refreshToken, {
   sameSite: 'Strict',
 });
 ```
-
 4. Role-Based Access Control (RBAC):
    RBAC is a method of restricting access to resources based on the roles of individual users within an organization.
-
 - Define Roles: First, you need to define the roles in your application (e.g., Admin, User, Guest).
 - Assign Roles to Users: Next, you need to assign roles to users. This can be done during user registration or through an admin interface.
-
 5. Guards in NestJS:
    Guards are a powerful feature in NestJS that allow you to implement authentication and authorization logic. You can create custom guards to check if a user has the necessary permissions to access a particular route.
-
 ```typescript
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -237,9 +216,7 @@ export class RolesGuard implements CanActivate {
   }
 }
 ```
-
 In this example, the `RolesGuard` checks if the user has any of the required roles to access the route. You can use this guard in your controllers to protect routes based on user roles.
-
 ```typescript
 @UseGuards(RolesGuard)
 @Roles('Admin')
@@ -248,10 +225,8 @@ getAdminData() {
   // Only users with the 'Admin' role can access this route
 }
 ```
-
 6. Device/Session Tracking:
    To enhance security, you can implement device or session tracking. This involves keeping track of the devices or sessions that a user has logged in from. If a user logs in from a new device or location, you can send an alert or require additional verification to ensure that it is the legitimate user. You can store device information (e.g., device type, IP address, location) in your database and associate it with the user's account. When a user logs in, you can check if the device is recognized and take appropriate actions if it is not.
-
 ```typescript
 @Injectable()
 export class AuthService {
@@ -276,9 +251,7 @@ export class AuthService {
 ```
 
 ## Database Design
-
 1. Schema Design:
-
 - When desigining your database schema, it's important to follow best practices to ensure that your data is organized efficiently and can be easily queried. Here are some key principles to keep in mind:
 - Normalization: This is the process of organizing your data to minimize redundancy and improve data integrity. It involves breaking down your data into smaller, related tables and establishing relationships between them. For example, instead of storing user information in a single table, you might have separate tables for users, profiles, and addresses, with foreign keys linking them together.
 - Indexing: Indexes can significantly improve query performance by allowing the database to quickly locate the relevant data. When designing your schema, consider which fields will be frequently queried and create indexes on those fields. For example, if you frequently query users by their email address, you might create an index on the email field in the users table.
@@ -291,9 +264,7 @@ export class AuthService {
 - Transactions: Represents the financial transactions made by users.
 - Categories: Represents the categories that transactions can be classified into.
 - Budgets: Represents the budgets set by users for different categories.
-
 Step 2: Define tables and fields
-
 - Users Table:
   - id (primary key)
   - email (unique)
@@ -326,47 +297,34 @@ Step 2: Define tables and fields
   - end_date
   - created_at
   - updated_at
-
 Step 3: Establish relationships
-
 - Users to Transactions: One-to-Many (one user can have many transactions)
 - Users to Categories: One-to-Many (one user can have many categories)
 - Users to Budgets: One-to-Many (one user can have many budgets)
 - Categories to Transactions: One-to-Many (one category can have many transactions)
 - Categories to Budgets: One-to-Many (one category can have many budgets)
-
 Step 4: Create indexes
-
 - Create indexes on frequently queried fields such as user_id in the Transactions, Categories, and Budgets tables to improve query performance.
-
 ```sql
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX idx_categories_user_id ON categories(user_id);
 CREATE INDEX idx_budgets_user_id ON budgets(user_id);
 ```
-
 Step 5: Pagination and Query Optimization
-
 - When designing your database schema, consider how you will handle pagination for large datasets. This can be achieved by using LIMIT and OFFSET in your SQL queries or by implementing cursor-based pagination for better performance. Additionally, optimize your queries by selecting only the necessary fields and using appropriate JOINs to minimize the amount of data being retrieved from the database.
-
 ```sql
 SELECT id, amount, date FROM transactions WHERE user_id = 1 ORDER BY date DESC LIMIT 10 OFFSET 0;
 ```
 
 ## API Design
-
 1. REST API Standards:
-
 - When designing your REST API, it's important to follow established standards to ensure that your API is intuititve and easy to use for developers. Here are some key principles to keep in mind:
 - Use Nouns for Endpoints: You API endpoints should be based on nouns that represent the resources being accessed. For example, use /users to access user resources and
   /transactions to access transaction resources.
 - Use HTTP Methods Appropriately: Use the appropriate HTTP methods for different operations. For example, use GET to retrieve data, POST to create new resources, PUT to update existing resources, and DELETE to remove resources.
 - Use Plural Nouns: Use plural nouns for your endpoints to indicate that they represent collections of resources. For example, use /users instead of /user. In this users endpoint, you can perform create, read, update, and delete operations on user resources.
-
 2. Proper status codes:
-
 - Use appropriate HTTP status codes to indicate the outcome of API requests. For example, use 200 OK for successful GET requests, 201 Created for successful POST requests, 204 No Content for successful DELETE requests, and 400 Bad Request for invalid input.
-
 ```ts
 @Get(':id')
 async getUser(@Param('id') id: string): Promise<User> {
@@ -400,9 +358,7 @@ async deleteUser(@Param('id') id: string): Promise<void> {
   }
 }
 ```
-
 3. Pagination API's:
-
 - When designing API endpoints that return lists of resources, it's important to implement pagination to improve performance and usability. This can be achieved by accepting query parameters for page number and page size, and returning a subset of the data along with metadata about the total number of resources and pages.
 
 ```ts
@@ -420,11 +376,8 @@ async getUsers(
   };
 }
 ```
-
-5. Filtering and Sorting:
-
+4. Filtering and Sorting:
 - Allow clients to filter and sort data by accepting query parameters for filtering criteria and sort order. This can be implemented by parsing the query parameters and applying the appropriate filters and sorting logic in your service layer.
-
 ```ts
 @Get()
 async getTransactions(
@@ -434,9 +387,7 @@ async getTransactions(
   return this.transactionsService.findAll({ category, sort });
 }
 ```
-
-6. Versioning:
-
+5. Versioning:
 - Implement API versioning to allow for changes and improvements to your API without breaking existing clients. This can be done by including the version number in the URL (e.g., /api/v1/users) or by using custom headers to specify the API version.
 
 ```ts
@@ -461,9 +412,7 @@ export class UsersController {
   }
 }
 ```
-
-7. Example of API design
-
+6. Example of API design
 ```ts
 // main.ts
 app.enableVersioning({
@@ -677,17 +626,12 @@ export class TransactionsControllerV2 {
   }
 }
 ```
-
 In this example, we have designed a RESTful API for managing transactions in an expense tracking application. The API follows REST standards, uses appropriate HTTP methods and status codes, implements pagination, filtering, and sorting, and includes versioning to allow for future changes without breaking existing clients.
 
 ## Error Handling
-
 Error handling is a critical aspect of any application, as it ensures that your application can gracefully handle unexpected situations and provide meaningful feedback to users. In NestJS, you can implement error handling using exception filters, which allow you to catch and handle exceptions thrown in your application.
-
 1. DTO Validataion:
-
 - Use DTOs to validate incoming data and ensure that it meets the expected format and constraints. This can be done using class-validator decorators in your DTO classes. Ex:
-
 ```ts
 // createTransaction.dto.ts
 import { IsString, IsNumber, IsEnum, Min } from 'class-validator';
@@ -716,9 +660,7 @@ app.useGlobalPipes(
   }),
 );
 ```
-
 In this example if user give the request give the bad request like
-
 ```json
 {
   "amount": -100,
@@ -727,9 +669,7 @@ In this example if user give the request give the bad request like
   "note": "Dinner"
 }
 ```
-
 The validation pipe will catch the error and return a 400 Bad Request response with details about the validation errors:
-
 ```json
 {
   "statusCode": 400,
@@ -740,11 +680,8 @@ The validation pipe will catch the error and return a 400 Bad Request response w
   "error": "Bad Request"
 }
 ```
-
 2. Exception Filters:
-
 - Use exception filters to catch and handle exceptions thrown in your application. You can create custom exception filters to handle specific types of errors and return appropriate responses to the client. Ex:
-
 ```ts
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -756,9 +693,7 @@ if (amount <= 0) {
   throw new BadRequestException('Invalid amount');
 }
 ```
-
 In this example, if a transaction is not found it return
-
 ```json
 {
   "statusCode": 404,
@@ -766,11 +701,8 @@ In this example, if a transaction is not found it return
   "error": "Not Found"
 }
 ```
-
 3. Global Exception Filter:
-
 - You can also create a global exception filter to catch any unhandled exceptions and return a generic error response. This can help to ensure that your application does not expose sensitive information in error messages and provides a consistent error response format.
-
 ```ts
 // exception.filter.ts
 import {
@@ -807,30 +739,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 // main.ts
 app.useGlobalFilters(new GlobalExceptionFilter());
 ```
-
 In this example, any unhandled exceptions will be caught by the GlobalExceptionFilter and return a 500 Internal Server Error response with a generic error message:
-
 ```json
 {
   "success": false,
   "message": "An unexpected error occurred"
 }
 ```
-
-4. Custome Error Handling Logic:
-
+4. Custom Error Handling Logic:
 - In addition to using exception filters, you can also implement custom error handling logic in your services or controllers. This can be useful for handling specific business logic errors or for logging errors for debugging purposes.
-
 ```ts
 throw new BadRequestException({
   code: 'INSUFFICIENT_BALANCE',
   message: 'You don’t have enough balance',
 });
 ```
-
 In this example, we throw a BadRequestException with a custom error code and message. The
 client will receive a 400 Bad Request response with the custom error details:
-
 ```json
 {
   "statusCode": 400,
@@ -865,7 +790,6 @@ Example of error handling:
   );
 ```
 In this case, if the validation fails, the client will receive a 400 Bad Request response with a structured error message that includes the field name and the specific validation errors for each field:
-
 ```json
 {
   "statusCode": 400,
@@ -936,3 +860,149 @@ In this code:
 - Check `if (exception instanceof HttpException)` to handle known HTTP exceptions and extract their status and message. For unknown exceptions, we default to a 500 Internal Server Error with a generic message.
 - This filter will catch any unhandled exceptions in the application and return a consistent error response format to the client, improving the overall error handling and user experience.
 - With this setup, you can ensure that all errors in your application are handled gracefully and provide meaningful feedback to users while also maintaining security by not exposing sensitive information in error messages.
+
+## Caching
+Caching is a technique used to improve the performance of an application by storing frequently accessed data in a temporary storage location, such as memory or a distributed cache. In NestJS, you can implement caching using the built-in CacheModule, which provides a simple and flexible way to cache data in your application.
+- Redis: This is a popular library for caching,
+- Cache aside: This is a caching strategy where the application is responsible for managing the cache. When a request is made, the application first checks if the data is available in the cache. If it is, it returns the cached data. If not, it fetches the data from the source (e.g., database or external API), stores it in the cache for future requests, and then returns the data to the caller.
+- TTL: Time-to-live (TTL) is a caching strategy where cached data is automatically invalidated after a certain period of time. This can help to ensure that the cache does not become stale and that users always receive up-to-date information. When using TTL, you can specify the duration for which the data should be cached, and after that duration has passed, the cache will automatically remove the data.
+
+1. Redis
+- Redis is a popular in-memory data structure store that can be used as a caching solution. It offers high performance and supports various data structures, making it suitable for caching complex data. To use Redis with NestJS, you can install the `ioredis` package and configure the Redis
+```ts
+// redis.provider.ts
+import Redis from 'ioredis';
+
+export const redis = new Redis({
+  host: 'localhost',
+  port: 6379,
+});
+
+// cache.module.ts
+import { Module, CacheModule } from '@nestjs/common';
+import { redis } from './redis.provider';
+@Module({
+  imports: [
+    CacheModule.register({
+      store: redis,
+    }),
+  ],
+  exports: [CacheModule],
+})
+export class CacheModule {}
+```
+In this example, we create a Redis client using the `ioredis` package and register it as the cache store in the CacheModule. You can then inject the CacheService into your services or controllers to use Redis for caching data.
+```ts
+import { Injectable, CacheService } from '@nestjs/common';
+@Injectable()
+export class SomeService {
+  constructor(private cacheService: CacheService) {}
+
+  async getData(key: string): Promise<any> {
+    // Check if data is in cache
+    const cachedData = await this.cacheService.get(key);
+    if (cachedData) {
+      return cachedData; // Return cached data if available
+    }
+
+    // If not in cache, fetch data from source
+    const data = await this.fetchDataFromSource();
+
+    // Store data in cache for future requests
+    await this.cacheService.set(key, data, { ttl: 3600 }); // Cache for 1 hour
+
+    return data;
+  }
+}
+```
+In this example, the `getData` method first checks if the requested data is available in the cache. If it is, it returns the cached data. If not, it fetches the data from the source (e.g., database or external API), stores it in the cache with a time-to-live (TTL) of 1 hour, and then returns the data to the caller. This approach can significantly improve performance by reducing the number of times you need to fetch data from slower sources.
+
+2. In-Memory Caching
+- In-memory caching is a simple caching solution that stores data in the memory of the application process itself. This can be useful for caching small amounts of data that are frequently accessed, but it may not be suitable for larger datasets or applications that require high availability. To implement in-memory caching in NestJS, you can use a simple JavaScript object to store cached data.
+```ts
+@Injectable()
+export class InMemoryCacheService {
+  private cache: Record<string, any> = {};
+
+  async get(key: string): Promise<any> {
+    return this.cache[key];
+  }
+
+  async set(key: string, value: any, ttl?: number): Promise<void> {
+    this.cache[key] = value;
+
+    if (ttl) {
+      setTimeout(() => {
+        delete this.cache[key]; // Automatically remove data after TTL expires
+      }, ttl * 1000);
+    }
+  }
+}
+```
+In this example, we create an `InMemoryCacheService` that uses a simple JavaScript object to store cached data. The `get` method retrieves data from the cache, while the `set` method stores data in the cache and optionally sets a time-to-live (TTL) to automatically remove the data after a certain period of time. This approach is straightforward and can be effective for small datasets, but it may not be suitable for larger applications or those that require distributed caching across multiple instances.
+
+3. Cache Aside Strategy
+- The cache aside strategy is a caching pattern where the application is responsible for managing the cache. When a request is made, the application first checks if the data is available in the cache. If it is, it returns the cached data. If not, it fetches the data from the source (e.g., database or external API), stores it in the cache for future requests, and then returns the data to the caller. This approach allows for more control over when data is cached and can help to ensure that the cache remains up-to-date.
+```ts
+@Injectable()
+export class CacheAsideService {
+  constructor(private cacheService: CacheService) {}
+
+  async getData(key: string): Promise<any> {
+    // Check if data is in cache
+    const cachedData = await this.cacheService.get(key);
+    if (cachedData) {
+      return cachedData; // Return cached data if available
+    }
+
+    // If not in cache, fetch data from source
+    const data = await this.fetchDataFromSource();
+
+    // Store data in cache for future requests
+    await this.cacheService.set(key, data, { ttl: 3600 }); // Cache for 1 hour
+
+    return data;
+  }
+}
+```
+In this example, the `getData` method implements the cache aside strategy. It first checks if the requested data is available in the cache. If it is, it returns the cached data. If not, it fetches the data from the source, stores it in the cache with a TTL of 1 hour, and then returns the data to the caller. This approach allows for more control over when data is cached and can help to ensure that users always receive up-to-date information while still benefiting from improved performance through caching.
+
+4. Time-to-Live (TTL) Caching
+- Time-to-live (TTL) caching is a strategy where cached data is automatically invalidated after a certain period of time. This can help to ensure that the cache does not become stale and that users always receive up-to-date information. When using TTL, you can specify the duration for which the data should be cached, and after that duration has passed, the cache will automatically remove the data.
+```ts
+@Injectable()
+export class TTLCacheService {
+  private cache: Record<string, any> = {};
+
+  async get(key: string): Promise<any> {
+    return this.cache[key];
+  }
+
+  async set(key: string, value: any, ttl: number): Promise<void> {
+    this.cache[key] = value;
+
+    setTimeout(() => {
+      delete this.cache[key]; // Automatically remove data after TTL expires
+    }, ttl * 1000);
+  }
+}
+```
+In this example, we create a `TTLCacheService` that implements time-to-live caching. The `set` method accepts a TTL parameter, which specifies how long the data should be cached. After the specified duration has passed, the data is automatically removed from the cache. This approach helps to ensure that users always receive up-to-date information while still benefiting from improved performance through caching.
+
+5. Cache Invalidation:
+- Cache invalidation is the process of removing or updating cached data when it becomes stale or when the underlying data changes. This is an important aspect of caching, as it helps to ensure that users always receive accurate and up-to-date information. In NestJS, you can implement cache invalidation by using event listeners or by manually clearing the cache when certain actions occur (e.g., when a user updates their profile or when a new transaction is created).
+```ts
+@Injectable()
+export class UserService {
+  constructor(private cacheService: CacheService) {}
+
+  async updateUserProfile(userId: string, profileData: any): Promise<void> {
+    // Update user profile in the database
+    await this.updateUserInDatabase(userId, profileData);
+
+    // Invalidate cache for the user's profile
+    await this.cacheService.del(`user_profile_${userId}`);
+  }
+}
+```
+In this example, when a user updates their profile, we first update the user information in the database and then invalidate the cache for that user's profile by deleting the cached data using the `del` method of the CacheService. This ensures that the next time the user's profile is requested, it will be fetched from the database and stored in the cache again, providing users with up-to-date information while still benefiting from caching performance improvements.

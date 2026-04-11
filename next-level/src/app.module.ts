@@ -7,9 +7,12 @@ import * as Joi from 'joi';
 import { MongooseModule } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
 import { AppConfigModule } from './config/config.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
+    RedisModule, // Import the RedisModule to make the Redis client available for dependency injection
+
     // Configure the ConfigModule to load environment variables and validate them using Joi
     ConfigModule.forRoot({
       isGlobal: true,
