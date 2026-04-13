@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { GlobalExceptionFilter } from './common/filters/exception.filter';
+import helmet from 'helmet';
 
 async function bootstrap() {
   // Create the NestJS application using the AppModule
@@ -50,6 +51,7 @@ async function bootstrap() {
   );
 
   app.useGlobalFilters(new GlobalExceptionFilter()); // Use the GlobalExceptionFilter to handle all exceptions in a consistent way
+  app.use(helmet()); // Use Helmet middleware to set secure HTTP headers
 
   // Enable versioning for the API (optional, but recommended for future-proofing)
   app.enableVersioning({

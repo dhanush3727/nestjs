@@ -12,6 +12,7 @@ import {
 import { CreateTransactionDto } from './dto/createTransaction.dto';
 import { TransactionQueryDto } from './dto/TransactionQueryDto.dto';
 import { UpdateTransactionDto } from './dto/updateTransaction.dto';
+import { Throttle } from '@nestjs/throttler';
 
 type Transaction = {
   id: string;
@@ -29,6 +30,7 @@ export class TransactionController {
   private transactions: Transaction[] = [];
 
   // Create a new transaction
+  @Throttle({ default: { limit: 5, ttl: 60 } }) // Apply rate limiting to this route (5 requests per minute)
   @Post()
   create(@Body() dto: CreateTransactionDto) {
     const newTx = { id: Date.now().toString(), ...dto };
@@ -42,6 +44,7 @@ export class TransactionController {
   }
 
   // Get all transactions
+  @Throttle({ default: { limit: 5, ttl: 60 } }) // Apply rate limiting to this route (5 requests per minute)
   @Get()
   findAll(@Query() query: TransactionQueryDto) {
     let data = [...this.transactions];

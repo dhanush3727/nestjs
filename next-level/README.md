@@ -1006,3 +1006,97 @@ export class UserService {
 }
 ```
 In this example, when a user updates their profile, we first update the user information in the database and then invalidate the cache for that user's profile by deleting the cached data using the `del` method of the CacheService. This ensures that the next time the user's profile is requested, it will be fetched from the database and stored in the cache again, providing users with up-to-date information while still benefiting from caching performance improvements.
+
+## Rate Limiting & Security
+1. Rate Limiting:
+- Rate limiting is a technique used to control the number of requests that a client can make to an API within a certain time period. This can help to prevent abuse and protect your application from denial-of-service (DoS) attacks. In NestJS, you can implement rate limiting using the `@nestjs/throttler` package, which provides decorators and guards to easily apply rate limits to your routes.
+**denial-of-service (DoS) attacks: It is a type of attack where an attacker attempts to make a machine or network resource unavailable to its intended users by overwhelming it with a flood of illegitimate requests.**
+```ts
+// app.module.ts
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+
+@Module({
+  imports: [
+    ThrottlerModule.forRoot({
+      ttl: 60, // Time to live (in seconds) for each request
+      limit: 100, // Maximum number of requests allowed within the TTL
+    }),
+    // ... other imports
+   ],
+    controllers: [AppController],
+    providers: [
+      AppService,
+      {
+        provide: APP_GUARD,
+        useClass: ThrottlerGuard, // Use the ThrottlerGuard as a global guard to apply rate limiting to all routes
+      },
+    ],
+})
+export class AppModule {}
+
+// transactions.controller.ts
+import { Throttle } from '@nestjs/throttler';
+@Controller('transactions')
+export class TransactionsController {
+  @Throttle({ default: { limit: 5, ttl: 60 } }) // Apply rate limiting to this route (5 requests per minute)
+  @Get()
+  findAll() {
+    // ... implementation
+  }
+}
+```
+In this example, we configure the `ThrottlerModule` in the `AppModule` to set a global rate limit of 100 requests per minute (60 seconds). We also use the `ThrottlerGuard` as a global guard to apply this rate limit to all routes in the application. Additionally, we can apply specific rate limits to individual routes using the `@Throttle` decorator, as shown in the `TransactionsController`, where we limit the `findAll` route to 5 requests per minute. This helps to protect our application from abuse and ensures that it remains responsive for all users.
+
+2. CORS (Cross-Origin Resource Sharing):
+- CORS is a security feature implemented by web browsers to restrict web applications from making requests to a different domain than the one that served the web page. In NestJS, you can enable CORS to allow your API to be accessed from different origins, which is especially important when building APIs that will be consumed by web applications hosted on different domains.
+```ts
+// main.ts
+import { NestFactory } from '@nestjs/core';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: 'https://example.com', // Allow requests from this origin
+    methods: 'GET,POST,PUT,DELETE', // Allowed HTTP methods
+    allowedHeaders: 'Content-Type, Authorization', // Allowed headers
+  });
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+In this example, we enable CORS in the `main.ts` file by calling the `enableCors` method on the NestJS application instance. We specify the allowed origin (e.g., `https://example.com`), the allowed HTTP methods, and the allowed headers. This configuration allows web applications hosted on `https://example.com` to make requests to our API while still maintaining security by restricting access from other origins.
+
+3. Helmet:
+- Helmet is a middleware that helps to secure your Express applications by setting various HTTP headers. In NestJS, you can use Helmet to enhance the security of your API by protecting it against common vulnerabilities such as cross-site scripting (XSS), clickjacking, and other attacks. Install the `helmet` package and use it in your `main.ts` file to apply security headers to all incoming requests.
+```ts
+// main.ts
+import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  app.use(helmet()); // Use Helmet to set security-related HTTP headers
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+In this example, we import the `helmet` middleware and use it in the `main.ts` file to apply security-related HTTP headers to all incoming requests. Helmet helps to protect your application from various web vulnerabilities by setting headers such as `Content-Security-Policy`, `X-Frame-Options`, `X-XSS-Protection`, and others. This is an important step in securing your API and ensuring that it is protected against common attacks.
+
+4. OWASP Top 10:
+- The OWASP Top 10 is a list of the most critical web application security risks, as identified by the Open Web Application Security Project (OWASP). When building your API, it's important to be aware of these risks and take steps to mitigate them. Some common OWASP Top 10 risks include:
+- Injection: This occurs when untrusted data is sent to an interpreter as part of a command or query. To prevent injection attacks, always validate and sanitize user input, and use parameterized queries when interacting with databases.
+- Broken Authentication: This happens when authentication and session management are implemented incorrectly, allowing attackers to compromise passwords, keys, or session tokens. To mitigate this risk, use strong authentication mechanisms, implement multi-factor authentication, and ensure that session tokens are securely stored and transmitted.
+- Sensitive Data Exposure: This occurs when sensitive data is not properly protected, allowing attackers to access it. To prevent this, ensure that sensitive data is encrypted both in transit and at rest, and implement proper access controls to restrict who can access the data.
+- XML External Entities (XXE): This happens when an application processes XML input that contains a reference to an external entity, which can lead to data exposure or denial of service. To mitigate this risk, disable external entity processing in your XML parsers and validate all XML input.
+- Broken Access Control: This occurs when access controls are not properly enforced, allowing attackers to access unauthorized resources. To prevent this, implement proper access control mechanisms, such as role-based access control (RBAC), and ensure that all access control checks are performed on the server side.
+- Security Misconfiguration: This happens when security settings are not properly configured, allowing attackers to exploit vulnerabilities. To mitigate this risk, ensure that your application and server configurations are secure, keep software up to date, and regularly review and test your security settings.
+- Cross-Site Scripting (XSS): This occurs when an application includes untrusted data in a web page without proper validation or escaping, allowing attackers to execute malicious scripts in the user's browser. To prevent XSS attacks, always validate and sanitize user input, and use appropriate encoding when displaying data in the browser.
+- Insecure Deserialization: This happens when an application deserializes untrusted data, which can lead to remote code execution or other attacks. To mitigate this risk, avoid deserializing untrusted data, and if deserialization is necessary, use a safe and secure deserialization library.
+- Using Components with Known Vulnerabilities: This occurs when an application uses libraries or components that have known security vulnerabilities. To prevent this, regularly update your dependencies and use tools like `npm audit` to identify and fix vulnerabilities in your dependencies.
+- Insufficient Logging and Monitoring: This happens when an application does not have proper logging and monitoring in place, allowing attackers to exploit vulnerabilities without being detected. To mitigate this risk, implement comprehensive logging and monitoring to detect and respond to security incidents in a timely manner.
+By being aware of these OWASP Top 10 risks and implementing appropriate security measures, you can help to protect your API from common vulnerabilities and ensure that it is secure for your users.

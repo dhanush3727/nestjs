@@ -8,10 +8,21 @@ import { MongooseModule } from '@nestjs/mongoose';
 import mongoose, { Connection } from 'mongoose';
 import { AppConfigModule } from './config/config.module';
 import { RedisModule } from './redis/redis.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     RedisModule, // Import the RedisModule to make the Redis client available for dependency injection
+    // Configure the ThrottlerModule to limit the number of requests from a single IP address within a specified time frame
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60, // time to live for each request in seconds
+          limit: 10, // maximum number of requests allowed within the ttl
+        },
+      ],
+    }),
 
     // Configure the ConfigModule to load environment variables and validate them using Joi
     ConfigModule.forRoot({
@@ -64,6 +75,12 @@ import { RedisModule } from './redis/redis.module';
     AuthModule,
   ],
   controllers: [AppController], // controllers used to handle incoming requests and return responses to the client
-  providers: [AppService], // providers used to handle business logic and interact with other services
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD, // Provide the APP_GUARD token to register a global guard
+      useClass: ThrottlerGuard, // Use the ThrottlerGuard as a global guard to apply rate limiting to all routes
+    },
+  ], // providers used to handle business logic and interact with other services
 })
 export class AppModule {}
