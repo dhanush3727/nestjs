@@ -1226,3 +1226,83 @@ export class CloudinaryModule {}
 ```
 In this example, we create a `CloudinaryService` that provides methods for uploading and deleting files in Cloudinary. We then use this service in our `TransactionsController` to handle file uploads. The `uploadFile` method uses the `FileInterceptor` to handle file uploads and includes validation for file size and type. If the file is valid, it is uploaded to Cloudinary using the `CloudinaryService`, and the result of the upload (such as the URL and public ID) is returned in the response. This allows you to easily manage media assets in your application using Cloudinary's powerful features.
 
+## Background Jobs & Scheduling
+1. Background Jobs:
+Background jobs are tasks that are executed asynchronously in the background, allowing your application to perform time-consuming operations without blocking the main thread. In NestJS, you can implement background jobs using the `@nestjs/bull` package, which provides integration with the Bull queue system. This allows you to create and manage background jobs that can be processed by worker processes, improving the performance and responsiveness of your application.
+```ts
+// jobs.module.ts
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
+import { JobsService } from './jobs.service';
+
+@Module({
+  imports: [
+    BullModule.registerQueue({
+      name: 'email', // Name of the queue
+    }),
+  ],
+  providers: [JobsService],
+  exports: [JobsService],
+})
+export class JobsModule {}
+
+// jobs.service.ts
+import { Injectable } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+
+@Injectable()
+export class JobsService {
+  constructor(@InjectQueue('email') private emailQueue: Queue) {}
+
+  async sendEmail(emailData: any) {
+    await this.emailQueue.add(emailData); // Add a job to the 'email' queue
+  }
+}
+
+// email.processor.ts
+import { Processor, Process } from '@nestjs/bull';
+import { Job } from 'bull';
+
+@Processor('email') // Specify the queue to process
+export class EmailProcessor {
+  @Process() // Process jobs from the queue
+  async handleEmailJob(job: Job) {
+    const emailData = job.data; // Access the data for the job
+    console.log('Processing email job:', emailData);
+
+    // Implement your email sending logic here (e.g., using a third-party email service)
+  }
+}
+```
+In this example, we create a `JobsModule` that registers a Bull queue named 'email'. We then create a `JobsService` that allows us to add jobs to the 'email' queue. Finally, we define an `EmailProcessor` that processes jobs from the 'email' queue and implements the logic for sending emails. This setup allows you to offload time-consuming tasks, such as sending emails, to background workers, improving the performance and responsiveness of your application.
+
+2. Scheduling Tasks:
+Scheduling tasks is the process of executing specific functions or operations at predefined intervals or specific times. In NestJS, you can implement task scheduling using the `@nestjs/schedule` package, which provides decorators and services to easily schedule tasks in your application. This allows you to automate repetitive tasks, such as sending daily reports, cleaning up old data, or performing regular maintenance operations.
+```ts
+// schedule.module.ts
+import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksService } from './tasks.service';
+
+@Module({
+  imports: [ScheduleModule.forRoot()], // Import the ScheduleModule
+  providers: [TasksService],
+})
+export class ScheduleModule {}
+
+// tasks.service.ts
+import { Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+
+@Injectable()
+export class TasksService {
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Schedule this task to run every day at midnight
+  handleDailyTasks() {
+    console.log('Running daily tasks at midnight');
+
+    // Implement your daily task logic here (e.g., sending reports, cleaning up data, etc.)
+  }
+}
+```
+In this example, we create a `ScheduleModule` that imports the `ScheduleModule` from `@nestjs/schedule`. We then define a `TasksService` that contains a method `handleDailyTasks`, which is decorated with the `@Cron` decorator to schedule it to run every day at midnight. You can implement your desired logic within the `handleDailyTasks` method, such as sending daily reports or performing maintenance tasks. This allows you to automate routine operations and ensure that they are executed consistently at the specified intervals.
