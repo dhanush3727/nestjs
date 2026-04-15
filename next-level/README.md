@@ -1100,3 +1100,129 @@ In this example, we import the `helmet` middleware and use it in the `main.ts` f
 - Using Components with Known Vulnerabilities: This occurs when an application uses libraries or components that have known security vulnerabilities. To prevent this, regularly update your dependencies and use tools like `npm audit` to identify and fix vulnerabilities in your dependencies.
 - Insufficient Logging and Monitoring: This happens when an application does not have proper logging and monitoring in place, allowing attackers to exploit vulnerabilities without being detected. To mitigate this risk, implement comprehensive logging and monitoring to detect and respond to security incidents in a timely manner.
 By being aware of these OWASP Top 10 risks and implementing appropriate security measures, you can help to protect your API from common vulnerabilities and ensure that it is secure for your users.
+
+## File Uploads
+1. Handling File Uploads:
+File uploads are a common feature in many applications, allowing users to upload files such as images, documents, or other media. In NestJS, you can implement file uploads using the `@nestjs/platform-express` package, which provides decorators and middleware to handle file uploads in your controllers. To implement file uploads in NestJS, you can use the `@UseInterceptors` decorator along with the `FileInterceptor` from the `@nestjs/platform-express` package. This allows you to handle file uploads in your controller methods and access the uploaded files through the request object.
+```ts
+// transactions.controller.ts
+import { Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+
+@Controller('transactions')
+export class TransactionsController {
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file')) // Use FileInterceptor to handle file uploads
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    console.log(file); // Access the uploaded file through the request object
+
+    // You can now process the file (e.g., save it to disk, upload to cloud storage, etc.)
+    return {
+      success: true,
+      message: 'File uploaded successfully',
+      filename: file.originalname,
+    };
+  }
+}
+```
+In this example, we define a `POST` route at `/transactions/upload` that allows users to upload a file. We use the `@UseInterceptors` decorator with the `FileInterceptor` to handle the file upload, specifying the field name (`'file'`) that contains the uploaded file in the request. The uploaded file is then accessible through the `@UploadedFile()` decorator, which injects the file into the controller method. You can process the uploaded file as needed, such as saving it to disk or uploading it to cloud storage, and return a response indicating that the file was uploaded successfully.
+```json
+{
+  "success": true,
+  "message": "File uploaded successfully",
+  "filename": "example.jpg"
+}
+```
+In this response, we indicate that the file was uploaded successfully and include the original filename of the uploaded file. This allows the client to confirm that the upload was successful and provides information about the uploaded file. You can further enhance this functionality by adding validation for file types, sizes, and other constraints to ensure that only valid files are accepted by your application.
+
+2. Cloudinary Integration:
+Cloudinary is a popular cloud-based service for managing and delivering media assets, such as images and videos. It provides features like automatic image optimization, transformations, and a global content delivery network (CDN) for fast delivery of media assets. To integrate Cloudinary with your NestJS application, you can create a service that handles file uploads to Cloudinary and use it in your controller to upload files directly to the cloud.
+```ts
+// cloudinary.provider.ts
+import { v2 as cloudinary } from 'cloudinary';
+
+export const CloudinaryProvider = {
+  provide: 'CLOUDINARY',
+  useFactory: () => {
+    return cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  },
+};
+
+// cloudinary.service.ts
+import { Injectable } from '@nestjs/common';
+import { v2 as cloudinary } from 'cloudinary';
+
+@Injectable()
+export class CloudinaryService {
+  async uploadFile(file: Express.Multer.File) {
+    return new Promise((resolve, reject) => {
+      const upload = cloudinary.uploader.upload_stream(
+        {
+          folder: 'next-level', // Optional: specify a folder in Cloudinary
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+
+      upload.end(file.buffer);
+    });
+  }
+
+  async deleteFile(publicId: string) {
+    return cloudinary.uploader.destroy(publicId);
+  }
+}
+
+// cloudinary.module.ts
+import { Module } from '@nestjs/common';
+import { CloudinaryService } from './cloudinary.service';
+import { CloudinaryProvider } from './cloudinary.provider';
+
+@Module({
+  providers: [CloudinaryProvider, CloudinaryService],
+  exports: [CloudinaryService],
+})
+export class CloudinaryModule {}
+
+// transactions.controller.ts
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+      fileFilter: (req, file, cb) => {
+        // Accept only image files (you can customize this as needed)
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Only image files are allowed'), false);
+        }
+      },
+    }),
+  )
+
+  // The 'file' argument in FileInterceptor should match the name of the file field in the multipart/form-data request
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    console.log(file); // Access the uploaded file through the request object
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    const result = this.cloudinary.uploadFile(file); // Upload the file to Cloudinary using the CloudinaryService
+    console.log(result); // Log the result of the upload (e.g., URL, public ID, etc.)
+
+    // You can now process the file (e.g., save it to disk, upload to cloud storage, etc.)
+    return {
+      success: true,
+      message: 'File uploaded successfully',
+      data: result, // Return the result of the upload (e.g., URL, public ID, etc.)
+    };
+  }
+```
+In this example, we create a `CloudinaryService` that provides methods for uploading and deleting files in Cloudinary. We then use this service in our `TransactionsController` to handle file uploads. The `uploadFile` method uses the `FileInterceptor` to handle file uploads and includes validation for file size and type. If the file is valid, it is uploaded to Cloudinary using the `CloudinaryService`, and the result of the upload (such as the URL and public ID) is returned in the response. This allows you to easily manage media assets in your application using Cloudinary's powerful features.
+

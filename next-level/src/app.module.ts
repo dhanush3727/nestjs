@@ -10,6 +10,7 @@ import { AppConfigModule } from './config/config.module';
 import { RedisModule } from './redis/redis.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { APP_GUARD } from '@nestjs/core';
     }),
     AppConfigModule, // Import the AppConfigModule to make CloudinaryService and MailService available for dependency injection
     AuthModule,
+    CloudinaryModule,
   ],
   controllers: [AppController], // controllers used to handle incoming requests and return responses to the client
   providers: [

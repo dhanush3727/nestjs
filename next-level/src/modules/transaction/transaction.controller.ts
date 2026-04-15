@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,11 +9,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/createTransaction.dto';
 import { TransactionQueryDto } from './dto/TransactionQueryDto.dto';
 import { UpdateTransactionDto } from './dto/updateTransaction.dto';
 import { Throttle } from '@nestjs/throttler';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 type Transaction = {
   id: string;
@@ -28,6 +33,8 @@ type Transaction = {
 })
 export class TransactionController {
   private transactions: Transaction[] = [];
+
+  constructor(private cloudinary: CloudinaryService) {}
 
   // Create a new transaction
   @Throttle({ default: { limit: 5, ttl: 60 } }) // Apply rate limiting to this route (5 requests per minute)
@@ -133,6 +140,40 @@ export class TransactionController {
       success: true,
       data: deleted[0],
       message: 'Transaction deleted',
+    };
+  }
+
+  // File upload endpoint (for demonstration, not fully implemented)
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+      fileFilter: (req, file, cb) => {
+        // Accept only image files (you can customize this as needed)
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true);
+        } else {
+          cb(new BadRequestException('Only image files are allowed'), false);
+        }
+      },
+    }),
+  )
+
+  // The 'file' argument in FileInterceptor should match the name of the file field in the multipart/form-data request
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    console.log(file); // Access the uploaded file through the request object
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    const result = this.cloudinary.uploadFile(file); // Upload the file to Cloudinary using the CloudinaryService
+    console.log(result); // Log the result of the upload (e.g., URL, public ID, etc.)
+
+    // You can now process the file (e.g., save it to disk, upload to cloud storage, etc.)
+    return {
+      success: true,
+      message: 'File uploaded successfully',
+      data: result, // Return the result of the upload (e.g., URL, public ID, etc.)
     };
   }
 }
