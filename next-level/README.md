@@ -1306,3 +1306,150 @@ export class TasksService {
 }
 ```
 In this example, we create a `ScheduleModule` that imports the `ScheduleModule` from `@nestjs/schedule`. We then define a `TasksService` that contains a method `handleDailyTasks`, which is decorated with the `@Cron` decorator to schedule it to run every day at midnight. You can implement your desired logic within the `handleDailyTasks` method, such as sending daily reports or performing maintenance tasks. This allows you to automate routine operations and ensure that they are executed consistently at the specified intervals.
+
+## Logging & Monitoring
+1. Logging:
+Logging is the practice of recording information about the execution of an application, which can be useful for debugging, monitoring, and auditing purposes. In NestJS, you can implement logging using the built-in `Logger` service or by integrating third-party logging libraries such as `winston` or `pino`. Proper logging can help you track the flow of your application, identify issues, and gain insights into user behavior.
+- Ex: Built-in Logger:
+```ts
+import { Injectable, Logger } from '@nestjs/common';
+
+@Injectable()
+export class SomeService {
+  private readonly logger = new Logger(SomeService.name); // Create a logger instance for this service
+
+  someMethod() {
+    this.logger.log('This is a log message'); // Log an informational message
+    this.logger.warn('This is a warning message'); // Log a warning message
+    this.logger.error('This is an error message'); // Log an error message
+  }
+}
+```
+In this example, we create a logger instance for the `SomeService` class and use it to log messages at different levels (log, warn, error). The built-in `Logger` service provides methods for logging messages at various levels, and you can customize the output format and destination by extending the `Logger` class or by using third-party logging libraries for more advanced features.
+
+- Ex: Request Logging (Interceptor):
+```ts
+// logging.interceptor.ts
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable, tap } from 'rxjs';
+
+@Injectable()
+export class LoggingInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const req = context.switchToHttp().getRequest();
+    const {mehtod, url} = req;
+    const startTime = Date.now();
+
+    return next.handle().pipe(
+      tap(() =>{
+        const duration = Date.now() - startTime;
+        console.log(`${method} ${url} - ${duration}ms`); // Log the method, URL, and duration of the request
+      })
+    )
+  }
+}
+
+// main.ts
+app.useGlobalInterceptors(new LoggingInterceptor());
+
+// Example log output:
+// GET /transactions - 120ms
+```
+In this example, we create a log interceptor that logs the HTTP method, URL, and duration of each incoming request.
+- In the interceptor code we import the necessary modules. The `rxjs` library is used to handle the asynchronous nature of the request processing. `Observable` is used to represent the stream of data that will be processed, and `tap` is an operator that allows us to perform side effects (like logging) without affecting the data stream.
+- We define a `LoggingInterceptor` class that implements the `NestInterceptor` interface. The `intercept` method is called for each incoming request, allowing us to perform actions before and after the request is processed.
+- Inside the `intercept` method, we extract the HTTP method and URL from the request object. We also record the start time to calculate the duration of the request later.
+- We then call `next.handle()` to pass control to the next handler in the request processing pipeline. This returns an `Observable` that we can use to perform actions after the request has been processed.
+- We use the `tap` operator to log the method, URL, and duration of the request once it has been processed. The duration is calculated by subtracting the start time from the current time.
+- Finally, we register the `LoggingInterceptor` as a global interceptor in the `main.ts` file, ensuring that it will be applied to all incoming requests. This allows us to have consistent logging of all requests in our application, which can be invaluable for debugging and monitoring purposes.
+
+- Ex: Error Logging (Exception Filter):
+```ts
+// all-exceptions.filter.ts
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+} from '@nestjs/common';
+
+@Catch()
+export class GlobalExceptionFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+
+    const request = ctx.getRequest();
+    const response = ctx.getResponse();
+
+    const { method, url } = request;
+
+    const status =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : 500;
+
+    const errorResponse =
+      exception instanceof HttpException
+        ? exception.getResponse()
+        : 'Internal server error';
+
+    console.error('[ERROR]', {
+      method,
+      url,
+      status,
+      error: errorResponse,
+      time: new Date().toISOString(),
+    });
+
+    response.status(status).json({
+      success: false,
+      statusCode: status,
+      message: errorResponse,
+    });
+  }
+}
+```
+In this example, we create a global exception filter that catches all exceptions thrown in the application and logs detailed information about the error, including the HTTP method, URL, status code, error message, and timestamp. The filter then sends a clean response to the client with the status code and error message. This approach allows us to have centralized error handling and logging, making it easier to identify and troubleshoot issues in our application.
+
+- Ex: Using Winston for Advanced Logging:
+Winston is a logging library that provides more advanced features that the built-in Logger. First install the winston package:
+```bash
+npm install winston
+```
+Then you can create a custom logger service that uses Winston for logging:
+```ts
+// winston.logger.ts
+import * as winston from 'winston';
+
+export const logger = winston.createLogger({
+  level: 'info',
+
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json(),
+  ),
+
+  transports: [
+    new winston.transports.Console(), // Log to the console
+    new winston.transports.File({ filename: 'app.log' }), // Log to a file
+  ],
+})
+
+// logging.interceptor.ts
+// replace console.log with winston logger
+return next.handle().pipe(
+  tap(() => {
+    const duration = Date.now() - startTime;
+
+    logger.info('Request completed', {
+      method,
+      url,
+      duration: `${duration}ms`,
+    });
+  }),
+);
+```
+In this code, we create a Winston logger that logs messages in JSON format with timestamps.
+- Create a logger instance using `winston.createLogger` and configure it with the desired logging level, format, and transports (e.g., console and file).
+- In the logging interceptor, replace `console.log` with `logger.info` to log the request information using the Winston logger. This allows you to have more structured and configurable logging in your application, making it easier to analyze logs and monitor the behavior of your application.
+

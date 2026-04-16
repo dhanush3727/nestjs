@@ -9,6 +9,7 @@ import {
 import cookieParser from 'cookie-parser';
 import { GlobalExceptionFilter } from './common/filters/exception.filter';
 import helmet from 'helmet';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptors';
 
 async function bootstrap() {
   // Create the NestJS application using the AppModule
@@ -57,6 +58,8 @@ async function bootstrap() {
   app.enableVersioning({
     type: VersioningType.URI, // Use URI versioning (e.g., /v1/endpoint)
   });
+
+  app.useGlobalInterceptors(new LoggingInterceptor()); // Use the LoggingInterceptor to log details of each incoming request and its processing time
 
   // Start the server and listen on the specified port
   await app.listen(port, () => {
