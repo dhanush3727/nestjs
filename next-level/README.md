@@ -1453,3 +1453,66 @@ In this code, we create a Winston logger that logs messages in JSON format with 
 - Create a logger instance using `winston.createLogger` and configure it with the desired logging level, format, and transports (e.g., console and file).
 - In the logging interceptor, replace `console.log` with `logger.info` to log the request information using the Winston logger. This allows you to have more structured and configurable logging in your application, making it easier to analyze logs and monitor the behavior of your application.
 
+2. Monitoring:
+Monitoring is the practice of continuously observing and analyzing the performance and health of an application. In NestJS, you can implement monitoring using tools like Prometheus, Grafana, or New Relic. These tools allow you to collect metrics, visualize performance data, and set up alerts for critical issues. Proper monitoring can help you identify bottlenecks, track resource usage, and ensure that your application is running smoothly.
+- Ex: Simple metrics tracker
+```ts
+// metrics.service.ts
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class MetricsService {
+  private requestCount = 0;
+  private errorCount = 0;
+
+  incrementRequests(){
+    this.requestCount++;
+  }
+
+  incrementErrors(){
+    this.errorCount++;
+  }
+
+  getMetrics() {
+    return {
+      totalRequests: this.requestCount,
+      totalErrors: this.errorCount,
+    };
+  }
+}
+
+// logging.interceptor.ts
+import { MetricsService } from './metrics.service';
+
+constructor(private metrics: MetricsService) {}
+
+return next.handle().pipe(
+  tap(() => {
+    const duration = Date.now() - startTime;
+
+    this.metrics.incrementRequests();
+
+    this.logger.log('Request completed', {
+      method,
+      url,
+      duration: `${duration}ms`,
+    });
+  }),
+);
+
+// Create an endpoint to retrieve metrics
+// monitoring.controller.ts
+import { Controller, Get } from '@nestjs/common';
+import { MetricsService } from './metrics.service';
+
+@Controller('metrics')
+export class MetricsController {
+  constructor(private metricsService: MetricsService) {}
+
+  @Get()
+  getMetrics() {
+    return this.metricsService.getMetrics();
+  }
+}
+```
+In this example, we create a simple `MetricsService` that tracks the total number of requests and errors in the application. We then inject this service into our logging interceptor and increment the request count for each incoming request. We also check the duration of each request and log a warning if it exceeds a certain threshold (e.g., 500ms). Finally, we create a `MetricsController` with an endpoint to retrieve the current metrics. This allows us to monitor the performance of our application and identify any issues that may arise. For more advanced monitoring, you can integrate with tools like Prometheus or New Relic to collect and visualize metrics in real-time.

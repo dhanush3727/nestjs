@@ -6,11 +6,15 @@ import {
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { WinstonLogger } from '../logger/winston.logger';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Injectable()
 // This interceptor logs the HTTP method, URL, and the time taken to process the request.
 export class LoggingInterceptor implements NestInterceptor {
-  constructor(private readonly logger: WinstonLogger) {} // Inject the WinstonLogger to log messages.
+  constructor(
+    private readonly logger: WinstonLogger,
+    private readonly metrics: MetricsService,
+  ) {} // Inject the WinstonLogger and MetricsService to log messages and track metrics.
 
   // The intercept method is called for each incoming request.
   intercept(
@@ -26,7 +30,11 @@ export class LoggingInterceptor implements NestInterceptor {
       // The tap operator allows us to perform side effects (like logging) without affecting the response stream.
       tap(() => {
         const endTime = Date.now();
+
         const duration = endTime - startTime;
+
+        this.metrics.incrementRequests(); // Increment the request count in the MetricsService.
+
         this.logger.log(`${method} ${url} - ${duration}ms`); // Log the method, URL, and duration using the WinstonLogger.
       }),
     );

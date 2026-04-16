@@ -11,6 +11,7 @@ import { RedisModule } from './redis/redis.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { WinstonLogger } from './common/logger/winston.logger';
 
 @Module({
   imports: [
@@ -79,10 +80,12 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
   controllers: [AppController], // controllers used to handle incoming requests and return responses to the client
   providers: [
     AppService,
+    WinstonLogger, // Provide the WinstonLogger to be used for logging throughout the application
     {
       provide: APP_GUARD, // Provide the APP_GUARD token to register a global guard
       useClass: ThrottlerGuard, // Use the ThrottlerGuard as a global guard to apply rate limiting to all routes
     },
   ], // providers used to handle business logic and interact with other services
+  exports: [WinstonLogger], // Export the WinstonLogger to make it available for dependency injection in other modules
 })
 export class AppModule {}
