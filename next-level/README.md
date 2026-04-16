@@ -1516,3 +1516,139 @@ export class MetricsController {
 }
 ```
 In this example, we create a simple `MetricsService` that tracks the total number of requests and errors in the application. We then inject this service into our logging interceptor and increment the request count for each incoming request. We also check the duration of each request and log a warning if it exceeds a certain threshold (e.g., 500ms). Finally, we create a `MetricsController` with an endpoint to retrieve the current metrics. This allows us to monitor the performance of our application and identify any issues that may arise. For more advanced monitoring, you can integrate with tools like Prometheus or New Relic to collect and visualize metrics in real-time.
+
+## Testing & Debugging
+1. Unit Testing:
+Unit testing is the practice of testing individual components or functions in isolation to ensure that they work as expected. In NestJS, you can implement unit testing using the built-in testing utilities provided by the framework, along with a testing library like Jest. Unit tests help you verify the correctness of your code and catch bugs early in the development process.
+```ts
+// transactions.service.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { TransactionsService } from './transactions.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Transaction } from './transaction.entity';
+
+describe('TransactionsService', () => {
+  let service: TransactionsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        TransactionsService,
+        {
+          provide: getRepositoryToken(Transaction),
+          useValue: {
+            find: jest.fn().mockResolvedValue([{ id: 1, amount: 100 }]), // Mock the repository method
+          },
+        },
+      ],
+    }).compile();
+
+    service = module.get<TransactionsService>(TransactionsService);
+  });
+
+  it('should return an array of transactions', async () => {
+    const transactions = await service.findAll();
+    expect(transactions).toEqual([{ id: 1, amount: 100 }]);
+  });
+});
+```
+In this example, we create a unit test for the `TransactionsService` using Jest. We mock the repository method to return a predefined set of transactions and then test that the `findAll` method returns the expected result. This allows us to verify that the service behaves correctly in isolation, without relying on external dependencies like the database.
+
+2. Integration Testing:
+Integration testing is the practice of testing how different components of an application work together. In NestJS, you can implement integration testing by creating a testing module that includes multiple components and services, and then writing tests that verify the interactions between them. Integration tests help you ensure that your application works correctly as a whole and that different parts of the system are properly integrated.
+```ts
+// transactions.controller.spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { TransactionsController } from './transactions.controller';
+import { TransactionsService } from './transactions.service';
+
+describe('TransactionsController', () => {
+  let controller: TransactionsController;
+  let service: TransactionsService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [TransactionsController],
+      providers: [
+        TransactionsService,
+        {
+          provide: getRepositoryToken(Transaction),
+          useValue: {
+            find: jest.fn().mockResolvedValue([{ id: 1, amount: 100 }]), // Mock the repository method
+          },
+        },
+      ],
+    }).compile();
+
+    controller = module.get<TransactionsController>(TransactionsController);
+    service = module.get<TransactionsService>(TransactionsService);
+  });
+
+  it('should return an array of transactions', async () => {
+    const transactions = await controller.findAll();
+    expect(transactions).toEqual([{ id: 1, amount: 100 }]);
+  });
+});
+```
+In this example, we create an integration test for the `TransactionsController` that includes both the controller and the service. We mock the repository method in the service to return a predefined set of transactions and then test that the controller's `findAll` method returns the expected result. This allows us to verify that the controller and service are properly integrated and that they work together as expected.
+
+3. End-to-End (E2E) Testing:
+End-to-end testing is the practice of testing the entire application from the user's perspective, simulating real user interactions and verifying that the application behaves correctly. In NestJS, you can implement end-to-end testing using tools like Supertest to make HTTP requests to your API and verify the responses. E2E tests help you ensure that your application works correctly in a real-world scenario and that all components are functioning together as expected.
+```ts
+// transactions.e2e-spec.ts
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from '../src/app.module';
+
+describe('TransactionsController (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule], // Import the entire application module
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  it('/transactions (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/transactions')
+      .expect(200);
+
+    expect(response.body).toEqual([{ id: 1, amount: 100 }]); // Verify the response
+  });
+
+  afterAll(async () => {
+    await app.close(); // Clean up and close the application after tests
+  });
+});
+```
+In this example, we create an end-to-end test for the `TransactionsController` that tests the entire application. We use Supertest to make an HTTP GET request to the `/transactions` endpoint and verify that the response is as expected. This allows us to ensure that the application works correctly from the user's perspective and that all components are functioning together as expected. E2E tests are crucial for validating the overall functionality of your application and catching issues that may not be apparent in unit or integration tests.
+
+4. Debugging:
+Debugging is the process of identifying and fixing issues in your code. In NestJS, you can use various tools and techniques to debug your application, such as using the built-in Node.js debugger, logging, or using an integrated development environment (IDE) with debugging capabilities. Proper debugging can help you quickly identify and resolve issues in your code, improving the overall quality and reliability of your application.
+- Using Node.js Debugger:
+You can start your NestJS application in debug mode using the `--inspect` flag, which allows you to connect a debugger to your application:
+```bash
+node --inspect dist/main.js
+```
+This will start your application and listen for debugger connections. You can then use a tool like Chrome DevTools or an IDE with debugging support to connect to the debugger and set breakpoints, inspect variables, and step through your code to identify issues.
+- Using Logging for Debugging:
+You can also use logging to help with debugging by adding log statements at critical points in your code to track the flow of execution and identify where issues may be occurring. For example:
+```ts
+someMethod() {
+  this.logger.log('Entering someMethod'); // Log when entering the method
+
+  try {
+    // Some code that may throw an error
+  } catch (error) {
+    this.logger.error('An error occurred in someMethod', error); // Log the error with details
+  }
+
+  this.logger.log('Exiting someMethod'); // Log when exiting the method
+}
+```
+In this example, we add log statements to track when we enter and exit the `someMethod`, as well as to log any errors that occur within the method. This can help you identify where issues are occurring and provide context for debugging. By using a combination of debugging tools and logging, you can effectively identify and resolve issues in your NestJS application, improving its overall quality and reliability. 
